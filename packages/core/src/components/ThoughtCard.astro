@@ -1,0 +1,106 @@
+---
+import { getExcerpt } from '@jawi/core/utils/getExcerpt';
+import { formatDate } from '@jawi/core/utils/formatDate';
+import { parseThoughtColor } from '@jawi/core/utils/parseThoughtColor';
+import TagBar from '@jawi/core/components/TagBar';
+
+interface Props {
+  content: string;
+  contentHtml?: string;
+  time: string;
+  tags: string[];
+  slug: string;
+  color?: string;
+}
+
+const { content, contentHtml, time, tags, slug, color } = Astro.props;
+
+const excerpt = getExcerpt(content, 500);
+const displayTime = time ? formatDate(time) : '';
+const gradientStyle = parseThoughtColor(color);
+---
+
+{Array.isArray(tags) && tags.length > 0 ? (
+  <div class="card-wrapper">
+    <div class="thought-card bottom-right-notch"
+      style={{ background: gradientStyle }}
+      data-slug={slug}
+      data-content={content}
+      data-content-html={contentHtml}
+      data-time={time}
+      data-display-time={displayTime}
+      data-tags={JSON.stringify(tags)}
+    >
+      <div class="thought-excerpt" set:html={excerpt}></div>
+      <time class="thought-time" datetime={time}>{displayTime}</time>
+    </div>
+    <TagBar tags={tags} />
+  </div>
+) : (
+  <div class="thought-card bottom-right-notch"
+    style={{ background: gradientStyle }}
+    data-slug={slug}
+    data-content={content}
+    data-content-html={contentHtml}
+    data-time={time}
+    data-display-time={displayTime}
+    data-tags={JSON.stringify(tags)}
+  >
+    <div class="thought-excerpt" set:html={excerpt}></div>
+    <time class="thought-time" datetime={time}>{displayTime}</time>
+  </div>
+)}
+
+<style>
+.thought-card {
+  padding: 1.5rem;
+  background: #1a1a1a;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  --notch-size: 10px;
+  --notch-line-width: 23px;
+  --notch-line-color: #333333;
+  --notch-line-offset: 3px;
+  --notch-corner-offset: 6px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.thought-card:hover {
+  opacity: 0.7;
+}
+
+.thought-excerpt {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #e0e0e0;
+  line-height: 1.6;
+  margin: 0 0 0.75rem 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.thought-time {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+@media (max-width: 768px) {
+  .thought-card {
+    padding: 1rem;
+  }
+}
+</style>
+
+<style is:global>
+.excerpt-embed {
+  display: inline-block;
+  padding: 0.1rem 0.4rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 3px;
+  color: #888;
+  font-size: 0.85rem;
+}
+</style>

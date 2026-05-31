@@ -1,0 +1,333 @@
+---
+import Layout from '@jawi/core/layouts/MainLayout';
+import { getAllUniqueTags, getItemsByTag } from '@jawi/core/utils/findByTag';
+import { getExcerpt } from '@jawi/core/utils/getExcerpt';
+import ThoughtModal from '@jawi/core/components/ThoughtModal';
+import { formatDate } from '@jawi/core/utils/formatDate';
+import { normalizeTag } from '@jawi/core/utils/normalizeTag';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+
+const { tag } = Astro.params;
+
+// Merge tags from all content types for static paths
+export async function getStaticPaths() {
+  const config = await loadConfig(Astro.root);
+  const allTags = await getAllUniqueTags();
+
+  return allTags.map(tagSlug => ({
+    params: { tag: tagSlug },
+    props: { tag: tagSlug }
+  }));
+}
+
+const allItems = await getItemsByTag(tag, config.content.dir);
+const decodedTag = decodeURIComponent(tag);
+
+const ITEMS_PER_PAGE = config.content.tagsPerPage;
+const totalPages = allItems.length > 0 ? Math.ceil(allItems.length / ITEMS_PER_PAGE) : 0;
+const pageItems = allItems.slice(0, ITEMS_PER_PAGE);
+---
+
+<Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <div class="tag-page">
+    <h1>Content tagged "{decodedTag}"</h1>
+    <p class="post-count">{allItems.length} item{allItems.length !== 1 ? 's' : ''}</p>
+
+    {pageItems.length > 0 && (
+      <table class="posts-table">
+        <thead>
+          <tr>
+            <th class="col-date">Date</th>
+            <th class="col-type">Type</th>
+            <th class="col-post">Content</th>
+            <th class="col-tags">Tags</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pageItems.map(item => (
+            <tr>
+              <td class="col-date">
+                <time datetime={item.time}>{item.localTime ? formatDate(item.localTime) : ''}</time>
+              </td>
+              <td class="col-type">
+                <span class={`type-badge type-${item.type}`}>{item.type}</span>
+              </td>
+              <td class="col-post">
+                {item.type === 'post' ? (
+                  <a href={`/posts/${item.slug}`}>{getExcerpt(item.content)}</a>
+                ) : item.type === 'code' ? (
+                  <a href={`/codes/${item.slug}`}>{item.title || getExcerpt(item.content)}</a>
+                ) : (
+                  <span class="thought-link" data-slug={item.slug} data-content={item.content} data-content-html={item.contentHtml} data-time={item.localTime} data-display-time={item.localTime ? formatDate(item.localTime) : ''} data-tags={JSON.stringify(item.tags)}>{getExcerpt(item.content)}</span>
+                )}
+              </td>
+              <td class="col-tags">
+                <div class="inline-tags">
+                  {Array.isArray(item.tags) && item.tags.map(t => {
+                    const slug = normalizeTag(t);
+                    return <a class="inline-tag" href={`/tags/${slug}`}>{t}</a>;
+                  })}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )}
+
+    {pageItems.length === 0 && (
+      <p class="no-posts">No content found with tag "{decodedTag}".</p>
+    )}
+
+    {totalPages > 1 && (
+      <nav class="pagination" aria-label="Tag pagination">
+        <a
+          class="pagination-link"
+          href="#"
+          style="visibility: hidden; pointer-events: none;"
+        >Previous</a>
+        <span class="pagination-info">Page 1 of {totalPages}</span>
+        <a
+          class="pagination-link bottom-right-notch"
+          href={`/tags/${tag}/page/2`}
+        >Next</a>
+      </nav>
+    )}
+
+    <a href="/" class="back-link">&larr; Back to all posts</a>
+  </div>
+  <ThoughtModal />
+</Layout>
+
+<script>
+  document.querySelectorAll('.thought-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const event = new CustomEvent('openThoughtModal', {
+        detail: {
+          slug: link.dataset.slug,
+          content: link.dataset.content,
+          contentHtml: link.dataset.contentHtml,
+          time: link.dataset.time,
+          displayTime: link.dataset.displayTime,
+          tags: JSON.parse(link.dataset.tags),
+        },
+        bubbles: true,
+      });
+      link.dispatchEvent(event);
+    });
+  });
+</script>
+
+<style>
+  .tag-page {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .tag-page h1 {
+    margin-bottom: 0.25rem;
+  }
+
+  .post-count {
+    color: #888;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+  }
+
+  .posts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .posts-table thead {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .posts-table th {
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+    color: #888;
+    font-weight: 500;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .posts-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #1a1a1a;
+    vertical-align: top;
+  }
+
+  .posts-table td:hover {
+    background: #111;
+  }
+
+  .col-date {
+    width: 140px;
+    white-space: nowrap;
+    color: #888;
+  }
+
+  .col-date time {
+    color: #888;
+  }
+
+  .col-type {
+    width: 80px;
+  }
+
+  .type-badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .type-post {
+    background: #1a1a1a;
+    color: #aaa;
+    border: 1px solid #333;
+  }
+
+  .type-thought {
+    background: #1a2a1a;
+    color: #8f8;
+    border: 1px solid #2a4a2a;
+  }
+
+  .type-code {
+    background: #1a1a2a;
+    color: #88f;
+    border: 1px solid #2a2a4a;
+  }
+
+  .col-post {
+    font-weight: 500;
+  }
+
+  .col-post a:hover {
+    opacity: 1;
+    color: #fff;
+  }
+
+  .thought-link {
+    color: #e0e0e0;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .thought-link:hover {
+    color: #8f8;
+  }
+
+  .col-tags {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  .inline-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .inline-tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #aaa;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .inline-tag:hover {
+    background: #333;
+    color: #fff;
+  }
+
+  .no-posts {
+    color: #888;
+    margin-bottom: 1.5rem;
+  }
+
+  .back-link {
+    color: #888;
+    font-size: 0.9rem;
+  }
+
+  .back-link:hover {
+    opacity: 1;
+    color: #fff;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 0;
+  }
+
+  .pagination-link {
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    background: #333;
+    color: #fff;
+    font-size: 0.875rem;
+    transition: background 0.2s ease;
+    position: relative;
+    display: inline-block;
+    --notch-size: 8px;
+    --notch-line-width: 16px;
+    --notch-line-color: #333;
+    --notch-line-offset: 2px;
+    --notch-corner-offset: 4px;
+  }
+
+  .pagination-link:hover {
+    background: #555;
+  }
+
+  .pagination-info {
+    color: #666;
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 768px) {
+    .posts-table {
+      font-size: 0.85rem;
+    }
+
+    .col-type {
+      display: none;
+    }
+
+    .col-tags {
+      display: none;
+    }
+
+    .pagination {
+      gap: 0.75rem;
+      padding: 1rem 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .pagination-link {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+  }
+</style>

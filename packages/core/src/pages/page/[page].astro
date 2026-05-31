@@ -1,0 +1,94 @@
+---
+import { findPosts } from '@jawi/core/utils/findPosts';
+import { findThoughts } from '@jawi/core/utils/findThoughts';
+import Layout from '@jawi/core/layouts/MainLayout';
+import Feed from '@jawi/core/components/Feed';
+import ThoughtModal from '@jawi/core/components/ThoughtModal';
+import { parseUTC } from '@jawi/core/utils/timezone';
+import { paginate, generatePaginationPaths } from '@jawi/core/utils/paginate';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+
+export async function getStaticPaths() {
+  const config = await loadConfig(Astro.root);
+  const allPosts = await findPosts(config.content.dir);
+  const allThoughts = await findThoughts(config.content.dir);
+  const allItems = [
+    ...allPosts.map(p => ({ ...p, type: 'post' as const })),
+    ...allThoughts.map(t => ({ ...t, type: 'thought' as const })),
+  ].sort((a, b) => {
+    const timeA = a.time ? parseUTC(a.time).getTime() : 0;
+    const timeB = b.time ? parseUTC(b.time).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  return generatePaginationPaths(allItems, config.content.postsPerPage);
+}
+
+// Merge posts and thoughts for rendering
+const allPosts = await findPosts(config.content.dir);
+const allThoughts = await findThoughts(config.content.dir);
+const allItems = [
+  ...allPosts.map(p => ({ ...p, type: 'post' as const })),
+  ...allThoughts.map(t => ({ ...t, type: 'thought' as const })),
+].sort((a, b) => {
+  const timeA = a.time ? parseUTC(a.time).getTime() : 0;
+  const timeB = b.time ? parseUTC(b.time).getTime() : 0;
+  return timeB - timeA;
+});
+
+const currentPage = parseInt(Astro.params.page || '1');
+const { items: pageItems, totalPages, hasPrevious, hasNext } = paginate(allItems, currentPage, config.content.postsPerPage);
+---
+
+<Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <main class="main-content">
+    <h1>Posts (Page {currentPage})</h1>
+    <Feed
+      posts={pageItems}
+      totalPages={totalPages}
+      currentPage={currentPage}
+      hasPrevious={hasPrevious}
+      hasNext={hasNext}
+    />
+  </main>
+  <ThoughtModal />
+</Layout>
+
+<style>
+  .main-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .main-content h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #333333;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      padding: 0 0.75rem;
+    }
+
+    .main-content h1 {
+      font-size: 1.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .main-content {
+      padding: 0 0.5rem;
+    }
+
+    .main-content h1 {
+      font-size: 1.25rem;
+    }
+  }
+</style>

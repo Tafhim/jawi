@@ -1,0 +1,27 @@
+---
+import { formatDate } from '@jawi/core/utils/formatDate';
+
+interface Props {
+  time: string;
+}
+
+const { time } = Astro.props;
+
+const displayTime = time ? formatDate(time) : '';
+---
+
+<time class="post-meta-time" datetime={time}>{displayTime}</time>
+
+<style>
+  .post-meta-time {
+    font-size: 0.875rem;
+    color: #888;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 768px) {
+    .post-meta-time {
+      font-size: 0.8rem;
+    }
+  }
+</style>

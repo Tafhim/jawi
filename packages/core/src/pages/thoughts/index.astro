@@ -1,0 +1,76 @@
+---
+import Layout from '@jawi/core/layouts/MainLayout';
+import ThoughtCard from '@jawi/core/components/ThoughtCard';
+import ThoughtModal from '@jawi/core/components/ThoughtModal';
+import { findThoughts } from '@jawi/core/utils/findThoughts';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+const thoughts = await findThoughts(config.content.dir);
+---
+
+<Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <div class="thoughts-page">
+    <h1>Thoughts</h1>
+    <p class="subtitle">Short-form notes and quick ideas</p>
+
+    <div class="feed">
+      {thoughts.length === 0 ? (
+        <p class="empty-message">No thoughts yet.</p>
+      ) : (
+        thoughts.map((thought) => (
+          <ThoughtCard
+            key={thought.slug}
+            content={thought.content}
+            contentHtml={thought.contentHtml}
+            time={thought.localTime}
+            tags={thought.tags}
+            slug={thought.slug}
+            color={thought.color}
+          />
+        ))
+      )}
+    </div>
+  </div>
+  <ThoughtModal />
+</Layout>
+
+<style>
+  .thoughts-page {
+    width: 100%;
+  }
+
+  .thoughts-page h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary, #ffffff);
+    margin: 0 0 0.25rem 0;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: 1rem;
+    margin: 0 0 1.5rem 0;
+  }
+
+  .feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .empty-message {
+    color: #888;
+    font-size: 1rem;
+    text-align: center;
+    padding: 2rem 0;
+  }
+
+  @media (max-width: 768px) {
+    .thoughts-page h1 { font-size: 1.5rem; }
+  }
+
+  @media (max-width: 480px) {
+    .thoughts-page h1 { font-size: 1.25rem; }
+  }
+</style>

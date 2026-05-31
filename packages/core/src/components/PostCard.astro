@@ -1,0 +1,171 @@
+---
+import PostMeta from '@jawi/core/components/PostMeta';
+import TagBar from '@jawi/core/components/TagBar';
+import { formatDate } from '@jawi/core/utils/formatDate';
+import { normalizeTag } from '@jawi/core/utils/normalizeTag';
+
+interface Props {
+  title: string;
+  time: string;
+  tags: string[];
+  slug: string;
+  compact?: boolean;
+}
+
+const { title, time, tags, slug, compact = false } = Astro.props;
+
+const displayTime = time ? formatDate(time) : '';
+---
+
+{compact ? (
+  <div class="post-compact-wrapper">
+    <a href={`/posts/${slug}`} class="post-link-compact">
+      <span class="post-title">{title}</span>
+    </a>
+    <div class="post-meta-row">
+      <span class="post-meta-compact">
+        <time datetime={time}>{displayTime}</time>
+      </span>
+      {Array.isArray(tags) && tags.length > 0 && (
+        <div class="tags-compact">
+          {tags.map((tag) => {
+            const tagSlug = normalizeTag(tag);
+            return <a class="tag" href={`/tags/${tagSlug}`}>{tag}</a>;
+          })}
+        </div>
+      )}
+    </div>
+  </div>
+) : Array.isArray(tags) && tags.length > 0 ? (
+  <div class="card-wrapper">
+    <article class="post-card bottom-right-notch">
+      <a
+        href={`/posts/${slug}`}
+        class="post-link"
+      >
+        <p class="post-excerpt">{title}</p>
+        <PostMeta time={time} />
+      </a>
+    </article>
+    <TagBar tags={tags} />
+  </div>
+) : (
+  <article class="post-card bottom-right-notch">
+    <a
+      href={`/posts/${slug}`}
+      class="post-link"
+    >
+      <p class="post-excerpt">{title}</p>
+      <PostMeta time={time} />
+    </a>
+  </article>
+)}
+
+<style>
+/* Compact (homepage list) */
+.post-compact-wrapper {
+  padding: 0.5rem 0;
+}
+
+.post-link-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.post-link-compact:hover .post-title {
+  opacity: 0.7;
+}
+
+.post-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  font-size: 0.75rem;
+  color: #666;
+  min-width: 0;
+}
+
+.post-meta-compact {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.post-meta-compact time {
+  color: #666;
+}
+
+.tags-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  min-width: 0;
+}
+
+.tags-compact .tag {
+  font-size: 0.75rem;
+  padding: 0.05rem 0.3rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #888;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tags-compact .tag:hover {
+  background: #333;
+  color: #fff;
+}
+
+.post-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.4;
+}
+
+/* Full card */
+.post-card {
+  padding: 1.5rem;
+  background: #1a1a1a;
+  border: 1px solid #333333;
+  border-radius: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  --notch-size: 10px;
+  --notch-line-width: 23px;
+  --notch-line-color: #333333;
+  --notch-line-offset: 3px;
+  --notch-corner-offset: 6px;
+}
+
+.post-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.post-excerpt {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1.4;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .post-card {
+    padding: 1rem;
+  }
+}
+</style>

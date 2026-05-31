@@ -1,0 +1,8 @@
+{
+  "name": "create-jawi",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "create-jawi": "./index.js"
+  }
+}

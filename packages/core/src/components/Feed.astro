@@ -1,0 +1,158 @@
+---
+import PostCard from '@jawi/core/components/PostCard';
+import ThoughtCard from '@jawi/core/components/ThoughtCard';
+
+interface Props {
+  posts: Array<{
+    title: string;
+    content: string;
+    contentHtml?: string;
+    time: string;
+    localTime?: string;
+    tags: string[];
+    slug: string;
+    type?: 'post' | 'thought';
+    color?: string;
+  }>;
+  totalPages?: number;
+  currentPage?: number;
+  hasPrevious?: boolean;
+  hasNext?: boolean;
+  basePath?: string;
+}
+
+const { posts, totalPages, currentPage, hasPrevious, hasNext, basePath = '/page' } = Astro.props;
+---
+
+<div class="feed">
+  {posts.length === 0 ? (
+    <p class="empty-message">No posts yet. Start writing and share your thoughts.</p>
+  ) : (
+    posts.map((item, i) => {
+      const displayTime = item.localTime || item.time || '';
+      return item.type === 'thought' ? (
+        <ThoughtCard
+          key={item.slug}
+          content={item.content}
+          contentHtml={item.contentHtml}
+          time={displayTime}
+          tags={item.tags}
+          slug={item.slug}
+          color={item.color}
+        />
+      ) : (
+        <PostCard
+          key={item.slug}
+          title={item.title}
+          content={item.content}
+          time={displayTime}
+          tags={item.tags}
+          slug={item.slug}
+        />
+      );
+    })
+  )}
+</div>
+
+{totalPages > 1 && (
+  <nav class="pagination" aria-label="Post pagination">
+    <a
+      class="pagination-link bottom-right-notch"
+      href={hasPrevious ? `${basePath}/${currentPage - 1}` : undefined}
+    >Previous</a>
+    <span class="pagination-info">Page {currentPage} of {totalPages}</span>
+    <a
+      class="pagination-link bottom-right-notch"
+      href={hasNext ? `${basePath}/${currentPage + 1}` : undefined}
+    >Next</a>
+  </nav>
+)}
+
+<style>
+  .feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .empty-message {
+    color: #888;
+    font-size: 1rem;
+    text-align: center;
+    padding: 2rem 0;
+  }
+
+  .feed > article:first-child {
+    margin-top: 0;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem 0;
+  }
+
+  .pagination-link {
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    background: #333;
+    color: #fff;
+    font-size: 0.875rem;
+    transition: background 0.2s ease;
+    position: relative;
+    display: inline-block;
+    --notch-size: 8px;
+    --notch-line-width: 16px;
+    --notch-line-color: #333;
+    --notch-line-offset: 2px;
+    --notch-corner-offset: 4px;
+  }
+
+  .pagination-link:hover {
+    background: #555;
+  }
+
+  .pagination-link[disabled],
+  .pagination-link[href="#"] {
+    color: #999;
+    cursor: not-allowed;
+  }
+
+  .pagination-info {
+    color: #666;
+    font-size: 0.875rem;
+  }
+
+  @media (max-width: 768px) {
+    .feed {
+      gap: 1.25rem;
+    }
+
+    .pagination {
+      gap: 0.75rem;
+      padding: 1rem 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .feed {
+      gap: 1rem;
+    }
+
+    .pagination-link {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.8rem;
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .feed > article {
+    animation: fadeIn 150ms ease;
+  }
+</style>

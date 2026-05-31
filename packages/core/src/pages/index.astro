@@ -1,0 +1,158 @@
+---
+import Layout from '@jawi/core/layouts/MainLayout';
+import PostCard from '@jawi/core/components/PostCard';
+import ThoughtCard from '@jawi/core/components/ThoughtCard';
+import ThoughtModal from '@jawi/core/components/ThoughtModal';
+import { findPosts } from '@jawi/core/utils/findPosts';
+import { findThoughts } from '@jawi/core/utils/findThoughts';
+import { getAllTagsWithCounts } from '@jawi/core/utils/getAllTagsWithCounts';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+
+const allPosts = await findPosts(config.content.dir);
+const allThoughts = await findThoughts(config.content.dir);
+const { tags, counts } = await getAllTagsWithCounts(config.content.dir);
+
+const allTags = Object.entries(counts)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 50)
+  .map(([tag, count]) => ({ tag, count }));
+
+// Latest 10 posts, latest 5 thoughts
+const posts = allPosts.slice(0, 10);
+const thoughts = allThoughts.slice(0, 5);
+---
+
+<Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <div class="homepage">
+    <div class="homepage-grid">
+      <div class="homepage-thoughts">
+        {thoughts.map((thought) => (
+          <ThoughtCard
+            key={thought.slug}
+            content={thought.content}
+            contentHtml={thought.contentHtml}
+            time={thought.localTime}
+            tags={thought.tags}
+            slug={thought.slug}
+            color={thought.color}
+          />
+        ))}
+        {allThoughts.length > 5 && (
+          <a href="/thoughts" class="view-all">View all thoughts &rarr;</a>
+        )}
+      </div>
+      <div class="homepage-posts">
+        <div class="tag-cloud">
+          {allTags.map(({ tag, count }) => (
+            <a class="tag-link" href={`/tags/${tag}`}>
+              <span class="tag-name">#{tag}</span>
+              <span class="tag-count">{count}</span>
+            </a>
+          ))}
+        </div>
+        {posts.map((post) => (
+          <PostCard
+            key={post.slug}
+            title={post.title}
+            content={post.content}
+            time={post.localTime ?? ''}
+            tags={post.tags}
+            slug={post.slug}
+            compact
+          />
+        ))}
+        {allPosts.length > 10 && (
+          <a href="/posts" class="view-all">All posts &rarr;</a>
+        )}
+      </div>
+    </div>
+  </div>
+  <ThoughtModal />
+</Layout>
+
+<style>
+  .homepage {
+    width: 100%;
+  }
+
+  .homepage-grid {
+    display: grid;
+    grid-template-columns: 60% 40%;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .homepage-posts,
+  .homepage-thoughts {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .view-all {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #888;
+    font-size: 0.875rem;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .view-all:hover {
+    color: #fff;
+    opacity: 1;
+  }
+
+  .tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .tag-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #aaa;
+    font-size: 0.8rem;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+  }
+
+  .tag-link:hover {
+    background: #333;
+    border-color: #555;
+    color: #fff;
+  }
+
+  .tag-name {
+    color: inherit;
+  }
+
+  .tag-count {
+    color: #666;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    background: #2a2a2a;
+    border-radius: 10px;
+  }
+
+  .tag-link:hover .tag-count {
+    background: #555;
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .homepage-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+</style>

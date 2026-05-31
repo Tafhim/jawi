@@ -1,0 +1,82 @@
+---
+import Layout from '@jawi/core/layouts/MainLayout';
+import ImageCard from '@jawi/core/components/ImageCard';
+import PostMeta from '@jawi/core/components/PostMeta';
+import TagBar from '@jawi/core/components/TagBar';
+import { getExcerpt } from '@jawi/core/utils/getExcerpt';
+import { parseMarkdown } from '@jawi/core/utils/parseMarkdown';
+import { findPostBySlug, findPosts } from '@jawi/core/utils/findPosts';
+import { findCodes } from '@jawi/core/utils/findCodes';
+import { toLocalTime } from '@jawi/core/utils/timezone';
+import { formatDate } from '@jawi/core/utils/formatDate';
+import { loadConfig } from '@jawi/core/config';
+import { existsSync } from 'fs';
+import { join } from 'path';
+
+const config = await loadConfig(Astro.root);
+
+// Dynamically generate static paths from all posts
+export async function getStaticPaths() {
+  const config = await loadConfig(Astro.root);
+  const posts = await findPosts(config.content.dir);
+  return posts.map(post => ({ params: { slug: post.slug } }));
+}
+
+const { slug } = Astro.params;
+const post = await findPostBySlug(slug, config.content.dir);
+
+if (!post) {
+  return Astro.redirect('/');
+}
+
+const codes = await findCodes(config.content.dir);
+const parsed = await parseMarkdown(post.content, post.filename, codes);
+
+// Filter frontmatter images to only include ones that actually exist on disk
+const validImages = parsed.frontmatter.images.filter((imgPath) => {
+  const cleanPath = imgPath.replace(/^\/+/, '');
+  const fullPath = join(process.cwd(), 'public', cleanPath);
+  return existsSync(fullPath);
+});
+
+// Warn about missing images
+const missingImages = parsed.frontmatter.images.filter((imgPath) => {
+  const cleanPath = imgPath.replace(/^\/+/, '');
+  const fullPath = join(process.cwd(), 'public', cleanPath);
+  return !existsSync(fullPath);
+});
+if (missingImages.length > 0) {
+  console.warn(`\n⚠️ Post (${post.filename}): missing images`);
+  missingImages.forEach(img => console.warn(`    - ${img}`));
+}
+
+const seoTitle = parsed.frontmatter.title || getExcerpt(parsed.content, 50) || `${slug} - Jawi`;
+const utcTime = parsed.frontmatter.time || '';
+const localTime = utcTime ? toLocalTime(utcTime) : '';
+const displayTime = localTime ? formatDate(localTime) : '';
+---
+
+<Layout title={seoTitle} siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <main>
+    <h1>{parsed.frontmatter.title || getExcerpt(parsed.content, 50)}</h1>
+    <PostMeta
+      time={localTime}
+    />
+    <TagBar tags={parsed.frontmatter.tags} />
+
+    {validImages.length > 0 && (
+      <div class="featured-images">
+        {validImages.map((img, i) => {
+          const cleanImg = img.replace(/^https?:\/\//, '').replace(/^\/static\/images\//, '/public/');
+          return <ImageCard key={i} image={cleanImg} alt="" large={true} />;
+        })}
+      </div>
+    )}
+
+    <article>
+      <div class="post-content">
+        <div set:html={parsed.contentHtml}></div>
+      </div>
+    </article>
+  </main>
+</Layout>

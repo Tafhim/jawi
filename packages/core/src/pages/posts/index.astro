@@ -1,0 +1,60 @@
+---
+import Layout from '@jawi/core/layouts/MainLayout';
+import Feed from '@jawi/core/components/Feed';
+import { findPosts } from '@jawi/core/utils/findPosts';
+import { paginate } from '@jawi/core/utils/paginate';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+
+const allPosts = await findPosts(config.content.dir);
+
+const { items: pagePosts, totalPages, currentPage, hasPrevious, hasNext } = paginate(allPosts, 1, config.content.postsPerPage);
+
+const items = pagePosts.map(post => ({
+  ...post,
+  type: 'post' as const,
+}));
+---
+
+<Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <div class="posts-page">
+    <h1>Posts</h1>
+    <p class="subtitle">Long-form articles and in-depth writing</p>
+    <Feed
+      posts={items}
+      totalPages={totalPages}
+      currentPage={currentPage}
+      hasPrevious={hasPrevious}
+      hasNext={hasNext}
+      basePath="/posts/page"
+    />
+  </div>
+</Layout>
+
+<style>
+  .posts-page {
+    width: 100%;
+  }
+
+  .posts-page h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--text-primary, #ffffff);
+    margin: 0 0 0.25rem 0;
+  }
+
+  .subtitle {
+    color: #888;
+    font-size: 1rem;
+    margin: 0 0 1.5rem 0;
+  }
+
+  @media (max-width: 768px) {
+    .posts-page h1 { font-size: 1.5rem; }
+  }
+
+  @media (max-width: 480px) {
+    .posts-page h1 { font-size: 1.25rem; }
+  }
+</style>

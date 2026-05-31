@@ -1,0 +1,28 @@
+{
+  "name": "@jawi/core",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/integration.js",
+  "exports": {
+    ".": "./src/integration.js",
+    "./package.json": "./package.json",
+    "./utils": "./src/utils/index.js",
+    "./utils/*": "./src/utils/*.js",
+    "./components/*": "./src/components/*.astro",
+    "./layouts/*": "./src/layouts/*.astro",
+    "./pages/*": "./src/pages/*.astro",
+    "./config": "./src/config.js",
+    "./version": "./src/version.js"
+  },
+  "bin": {
+    "jawi": "./src/cli.js"
+  },
+  "dependencies": {
+    "astro": "^6.3.8",
+    "@astrojs/mdx": "^5.0.6",
+    "marked": "^18.0.2",
+    "prismjs": "^1.30.0",
+    "parse5": "^7.0.0"
+  },
+  "files": ["src/", "README.md", "CHANGELOG.md"]
+}

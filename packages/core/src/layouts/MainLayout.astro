@@ -1,0 +1,811 @@
+---
+import Header from '@jawi/core/components/Header';
+import Footer from '@jawi/core/components/Footer';
+import { isUserTimezone } from '@jawi/core/utils/timezone';
+
+interface Props {
+  siteTitle?: string;
+  footerText?: string;
+  dateFormat?: string;
+}
+
+const { siteTitle = 'Jawi', footerText = 'Jawi', dateFormat = 'long' } = Astro.props;
+
+const userTimezone = isUserTimezone();
+const dateFormatPreset = dateFormat || 'long';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{siteTitle}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="container">
+      <Header siteTitle={siteTitle} />
+      <slot />
+      <Footer footerText={footerText} />
+    </div>
+    <script client:load>
+      // Copy URL button for link embeds (event delegation)
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-copy-url]');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const url = btn.getAttribute('data-copy-url');
+        navigator.clipboard.writeText(url).then(() => {
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        }).catch(() => {
+          btn.textContent = 'Failed';
+          setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        });
+      });
+    </script>
+    {userTimezone && (
+      <script client:load define:vars={{ preset: dateFormatPreset }}>
+        // Client-side timezone: convert UTC times to visitor's local timezone
+        (function() {
+          // Pure helper functions (mirrors formatDate.js)
+          const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+          const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+          function ordinal(n) {
+            const s = ['th', 'st', 'nd', 'rd'];
+            const v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+          }
+
+          function to12Hour(h, m) {
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hour12 = h % 12 || 12;
+            return { hour: String(hour12), minute: String(m).padStart(2, '0'), ampm };
+          }
+
+          function getDayOfWeek(year, month, day) {
+            return new Date(year, month - 1, day).getDay();
+          }
+
+          function parseTimeStr(timeStr) {
+            if (!timeStr) return null;
+            const [datePart, timePart] = timeStr.split(' ');
+            if (!datePart || !timePart) return null;
+            const [year, month, day] = datePart.split('-').map(Number);
+            const [hour, minute, second] = timePart.split(':').map(Number);
+            if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+            const dow = getDayOfWeek(year, month, day);
+            const { hour: h12, minute: min, ampm } = to12Hour(hour || 0, minute || 0);
+            return {
+              year, month, day, hour: hour || 0, minute: minute || 0, second: second || 0,
+              dow, h12, min, ampm,
+              dayName: DAYS[dow],
+              monthName: MONTHS[month - 1],
+              monthShort: MONTHS_SHORT[month - 1],
+              dayOrdinal: ordinal(day),
+            };
+          }
+
+          function formatWithPreset(p, preset) {
+            switch (preset) {
+              case 'long':
+                return p.dayName + ', ' + p.dayOrdinal + ' ' + p.monthName + ', ' + p.year + ' at ' + p.h12 + ':' + p.min + ' ' + p.ampm;
+              case 'medium':
+                return p.dayOrdinal + ' ' + p.monthName + ', ' + p.year + ' at ' + p.h12 + ':' + p.min + ' ' + p.ampm;
+              case 'short':
+                return p.day + ' ' + p.monthShort + ' ' + p.year + ', ' + p.h12 + ':' + p.min + ' ' + p.ampm;
+              case 'compact':
+                return p.monthShort + ' ' + p.day + ', ' + p.year;
+              case 'minimal':
+                return p.day + '/' + String(p.month).padStart(2, '0') + '/' + p.year;
+              case 'iso':
+                return p.year + '-' + String(p.month).padStart(2, '0') + '-' + String(p.day).padStart(2, '0') + ' ' + String(p.hour).padStart(2, '0') + ':' + String(p.minute).padStart(2, '0');
+              default:
+                return p.dayName + ', ' + p.dayOrdinal + ' ' + p.monthName + ', ' + p.year + ' at ' + p.h12 + ':' + p.min + ' ' + p.ampm;
+            }
+          }
+
+          function utcToLocalTimeStr(utcTimeStr) {
+            if (!utcTimeStr) return '';
+            const iso = utcTimeStr.replace(' ', 'T') + 'Z';
+            const date = new Date(iso);
+            if (isNaN(date.getTime())) return '';
+            const formatter = new Intl.DateTimeFormat('en', {
+              timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              year: 'numeric', month: '2-digit', day: '2-digit',
+              hour: '2-digit', minute: '2-digit', second: '2-digit',
+              hour12: false,
+            });
+            const parts = formatter.formatToParts(date);
+            const get = (type) => parts.find((p) => p.type === type)?.value || '00';
+            return get('year') + '-' + get('month') + '-' + get('day') + ' ' + get('hour') + ':' + get('minute') + ':' + get('second');
+          }
+
+          function formatDateClientSide(utcTimeStr, preset) {
+            const localStr = utcToLocalTimeStr(utcTimeStr);
+            if (!localStr) return '';
+            const parsed = parseTimeStr(localStr);
+            if (!parsed) return localStr.slice(0, 16);
+            return formatWithPreset(parsed, preset);
+          }
+
+          // The preset is injected by Astro via define:vars
+          const DATE_PRESET = preset || 'long';
+
+          // Reformat all <time> elements on the page
+          function reformatTimes() {
+            document.querySelectorAll('time[datetime]').forEach(function(el) {
+              const utcTime = el.getAttribute('datetime');
+              if (!utcTime) return;
+              // Skip if it looks like it's already a formatted string (not a datetime)
+              if (!/^\d{4}-\d{2}-\d{2}/.test(utcTime)) return;
+              const formatted = formatDateClientSide(utcTime, DATE_PRESET);
+              if (formatted) {
+                el.textContent = formatted;
+              }
+            });
+          }
+
+          // Run on DOM ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', reformatTimes);
+          } else {
+            reformatTimes();
+          }
+
+          // Expose for ThoughtModal to call when it opens
+          window.__reformatModalTime = function(utcTime, el) {
+            if (!utcTime || !el) return;
+            if (!/^\d{4}-\d{2}-\d{2}/.test(utcTime)) return;
+            const formatted = formatDateClientSide(utcTime, DATE_PRESET);
+            if (formatted) {
+              el.textContent = formatted;
+            }
+          };
+        })();
+      </script>
+    )}
+  </body>
+</html>
+
+<style is:global>
+  /* Theme variables */
+  :root {
+    --bg-primary: #000000;
+    --text-primary: #ffffff;
+    --text-secondary: #cccccc;
+    --border-color: #333333;
+    --accent-color: #444444;
+    --card-bg: #0a0a0a;
+    --shadow-color: rgba(0, 0, 0, 0.5);
+    --font-mono: "IBM Plex Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  /* Global font */
+  * {
+    font-family: var(--font-mono);
+  }
+
+  /* Reset */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    overflow-x: hidden;
+  }
+
+  body.no-scroll {
+    overflow: hidden;
+  }
+
+  body {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  a {
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+  }
+
+  a:hover {
+    opacity: 0.7;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 1rem;
+  }
+
+  h1 { font-size: 2.5rem; }
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.5rem; }
+
+  p { margin-bottom: 1rem; }
+
+  pre, code, kbd, samp {
+    font-family: var(--font-mono);
+    font-size: inherit;
+  }
+
+  /* Focus states */
+  :focus-visible {
+    outline: 2px solid var(--text-primary);
+    outline-offset: 2px;
+  }
+
+  /* Notch utility */
+  .bottom-right-notch {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--notch-size)), calc(100% - var(--notch-size)) 100%, 0 100%);
+    position: relative;
+  }
+
+  .bottom-right-notch::after {
+    content: '';
+    position: absolute;
+    bottom: var(--notch-line-offset);
+    right: calc(var(--notch-corner-offset) * -1);
+    width: var(--notch-line-width);
+    height: 1px;
+    background-color: var(--notch-line-color);
+    transform: rotate(-45deg);
+    z-index: 2;
+  }
+
+  /* Skip link */
+  .skip-link {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    color: #000000;
+    padding: 0.75rem 1.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 4px;
+    z-index: 10000;
+    transition: top 0.2s ease;
+  }
+
+  .skip-link:focus {
+    top: 0;
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+  }
+
+  /* Container */
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 1.25rem 0.75rem;
+    }
+
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.35rem; }
+    h3 { font-size: 1.1rem; }
+  }
+
+  @media (max-width: 480px) {
+    .container {
+      padding: 1rem 0.5rem;
+    }
+
+    h1 { font-size: 1.5rem; }
+    h2 { font-size: 1.2rem; }
+    h3 { font-size: 1rem; }
+
+    body {
+      font-size: 14px;
+    }
+  }
+
+  /* Mobile large desktop */
+  @media (min-width: 1280px) {
+    .container {
+      max-width: 1100px !important;
+    }
+  }
+
+  /* === Image Cards === */
+  .image-card {
+    margin: 20px 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 6px var(--shadow-color);
+  }
+
+  .image-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-height: 400px;
+    object-fit: cover;
+  }
+
+  .image-card--large img {
+    max-height: 600px;
+  }
+
+  .featured-images {
+    margin: 40px 0;
+  }
+
+  /* === Post Content === */
+  .post-content {
+    margin-top: 30px;
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+
+  .post-content p {
+    margin-bottom: 1.5rem;
+  }
+
+  .post-content h2 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.75rem;
+  }
+
+  .post-content h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.3rem;
+  }
+
+  .post-content img {
+    margin: 1.5rem auto;
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  /* === Code Embed === */
+  .code-embed {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #0d0d0d;
+  }
+
+  .code-embed[open] {
+    border-color: var(--accent-color);
+  }
+
+  .code-embed-summary {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--accent-color);
+    border-radius: 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    user-select: none;
+  }
+
+  .code-embed-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .code-embed-summary::before {
+    content: '▸';
+    transition: transform 0.2s ease;
+    display: inline-block;
+  }
+
+  .code-embed[open] > .code-embed-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .code-embed-body {
+    padding: 0;
+    overflow-x: auto;
+  }
+
+  .code-embed-body pre {
+    margin: 0;
+    padding: 1rem;
+    background: #0d0d0d;
+  }
+
+  .code-embed-body pre code {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    tab-size: 2;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  /* === Prism.js Syntax Highlighting (Dark Theme) === */
+  .code-embed-body code .token.comment,
+  .code-embed-body code .token.prolog,
+  .code-embed-body code .token.doctype,
+  .code-embed-body code .token.cdata,
+  .code-detail-block code .token.comment,
+  .code-detail-block code .token.prolog,
+  .code-detail-block code .token.doctype,
+  .code-detail-block code .token.cdata {
+    color: #6a737d;
+  }
+
+  .code-embed-body code .token.punctuation,
+  .code-detail-block code .token.punctuation {
+    color: #e6e1cf;
+  }
+
+  .code-embed-body code .token.property,
+  .code-embed-body code .token.tag,
+  .code-embed-body code .token.constant,
+  .code-embed-body code .token.symbol,
+  .code-detail-block code .token.property,
+  .code-detail-block code .token.tag,
+  .code-detail-block code .token.constant,
+  .code-detail-block code .token.symbol {
+    color: #e06c75;
+  }
+
+  .code-embed-body code .token.boolean,
+  .code-embed-body code .token.number,
+  .code-detail-block code .token.boolean,
+  .code-detail-block code .token.number {
+    color: #d19a66;
+  }
+
+  .code-embed-body code .token.function,
+  .code-embed-body code .token.selector,
+  .code-detail-block code .token.function,
+  .code-detail-block code .token.selector {
+    color: #61afef;
+  }
+
+  .code-embed-body code .token.string,
+  .code-detail-block code .token.string {
+    color: #98c379;
+  }
+
+  .code-embed-body code .token.operator,
+  .code-detail-block code .token.operator {
+    color: #56b6c2;
+  }
+
+  .code-embed-body code .token.keyword,
+  .code-detail-block code .token.keyword {
+    color: #c678dd;
+  }
+
+  .code-embed-body code .token.attr-name,
+  .code-embed-body code .token.class-name,
+  .code-detail-block code .token.attr-name,
+  .code-detail-block code .token.class-name {
+    color: #e5c07b;
+  }
+
+  .code-embed-body code .token.attr-value,
+  .code-detail-block code .token.attr-value {
+    color: #98c379;
+  }
+
+  .code-embed-body code .token.regex,
+  .code-detail-block code .token.regex,
+  .code-embed-body code .token.variable,
+  .code-detail-block code .token.variable {
+    color: #bb80b9;
+  }
+
+  .code-embed-body code .token.important,
+  .code-detail-block code .token.bold {
+    font-weight: bold;
+  }
+
+  .code-embed-body code .token.italic,
+  .code-detail-block code .token.italic {
+    font-style: italic;
+  }
+
+  /* === Link Preview === */
+  .link-preview {
+    --lp-width: var(--link-preview-width, 30em);
+    --lp-pad-x: var(--link-preview-padding-inline, 0);
+    --lp-pad-y: var(--link-preview-padding-block, 0.5em);
+    --lp-corners: var(--link-preview-corners, 0);
+    --lp-desc-lines: var(--link-preview-description-lines, 1);
+    position: relative;
+    width: var(--lp-width);
+    max-width: 100%;
+    display: flex;
+    flex-direction: column-reverse;
+    border-radius: var(--lp-corners);
+  }
+  .link-preview p {
+    margin: 0 !important;
+  }
+  .link-preview__content {
+    display: flex;
+    flex-direction: column;
+    padding: var(--lp-pad-y) var(--lp-pad-x);
+  }
+  .link-preview header {
+    display: flex;
+    flex-direction: column-reverse;
+  }
+  .link-preview__description {
+    display: -webkit-box;
+    -webkit-line-clamp: var(--lp-desc-lines);
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .link-preview:not(.link-preview--has-video) a::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+  .link-preview img,
+  .link-preview video {
+    aspect-ratio: 1200 / 630;
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-top-left-radius: var(--lp-corners);
+    border-top-right-radius: var(--lp-corners);
+  }
+  .link-preview__favicon {
+    width: auto;
+    height: 4rem;
+    aspect-ratio: 1 / 1;
+    object-fit: contain;
+    display: block;
+    margin: 0.5rem auto;
+    padding: 0.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  }
+
+  /* === Link Embed (collapsible wrapper) === */
+  .link-embed {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #0d0d0d;
+  }
+
+  .link-embed[open] {
+    border-color: var(--accent-color);
+  }
+
+  .link-embed-summary {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--accent-color);
+    border-radius: 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    user-select: none;
+  }
+
+  .link-embed-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .link-embed-summary::before {
+    content: '\25b8';
+    transition: transform 0.2s ease;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  .link-embed[open] > .link-embed-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .link-embed-url {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  .link-embed-copy {
+    flex-shrink: 0;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+    background: #333333;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    min-width: 3rem;
+    text-align: center;
+  }
+
+  .link-embed-copy:hover {
+    background: #555555;
+    color: var(--text-primary);
+  }
+
+  .link-embed .link-preview {
+    border-radius: 0;
+    width: 100%;
+    --lp-width: 100%;
+  }
+
+  .link-embed .link-preview__content {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .link-embed .link-preview__title {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .link-embed .link-preview__domain {
+    display: block;
+    font-size: 0.75rem;
+    color: #666666;
+    margin-top: 0.15rem;
+  }
+
+  .link-embed .link-preview__description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+
+  .link-embed .link-preview img,
+  .link-embed .link-preview video {
+    border-radius: 0;
+    width: 100%;
+    margin: 0;
+  }
+
+  .link-embed .link-preview__favicon {
+    background: #0d0d0d;
+  }
+
+  /* === Glitch Triple Burst (logo) === */
+  .glitch-triple {
+    position: relative;
+    animation: glitch-triple 12s steps(1) infinite;
+  }
+
+  @keyframes glitch-triple {
+    0%, 100% { text-shadow: none; }
+
+    /* Burst A: red / blue */
+    0.5%  { text-shadow: -2px 0 rgba(139,0,0,0.7), 2px 0 rgba(0,0,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,0,139,0.5); }
+    1%    { text-shadow: 3px 0 rgba(139,0,0,0.7), -2px 0 rgba(0,0,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,0,139,0.5); }
+    1.5%  { text-shadow: 0 0 rgba(139,0,0,0.7), 0 0 rgba(0,0,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,0,139,0.5); }
+    2%    { text-shadow: -3px 0 rgba(139,0,0,0.7), 2px 0 rgba(0,0,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,0,139,0.5); }
+    2.5%  { text-shadow: 2px 0 rgba(139,0,0,0.7), -3px 0 rgba(0,0,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,0,139,0.5); }
+    3%    { text-shadow: -2px 0 rgba(139,0,0,0.7), 3px 0 rgba(0,0,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,0,139,0.5); }
+    3.3%  { text-shadow: none; }
+
+    3.3%, 33.2% { text-shadow: none; }
+
+    /* Burst B: blue / cyan */
+    33.8% { text-shadow: -2px 0 rgba(0,0,139,0.7), 2px 0 rgba(0,139,139,0.7), 0 0 8px rgba(0,0,139,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    34.3% { text-shadow: 2px 0 rgba(0,0,139,0.7), -1px 0 rgba(0,139,139,0.7), 0 0 8px rgba(0,0,139,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    34.8% { text-shadow: 0 0 rgba(0,0,139,0.7), 0 0 rgba(0,139,139,0.7), 0 0 8px rgba(0,0,139,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    35.3% { text-shadow: -3px 0 rgba(0,0,139,0.7), 2px 0 rgba(0,139,139,0.7), 0 0 8px rgba(0,0,139,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    35.8% { text-shadow: 2px 0 rgba(0,0,139,0.7), -2px 0 rgba(0,139,139,0.7), 0 0 8px rgba(0,0,139,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    36.3% { text-shadow: -1px 0 rgba(0,0,139,0.7), 3px 0 rgba(0,139,139,0.7), 0 0 8px rgba(0,0,139,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    36.6% { text-shadow: none; }
+
+    36.6%, 66.5% { text-shadow: none; }
+
+    /* Burst C: red / cyan */
+    67%   { text-shadow: -4px 0 rgba(139,0,0,0.7), 4px 0 rgba(0,139,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    67.5% { text-shadow: 3px 0 rgba(139,0,0,0.7), -2px 0 rgba(0,139,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    68%   { text-shadow: 0 0 rgba(139,0,0,0.7), 0 0 rgba(0,139,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    68.5% { text-shadow: -3px 0 rgba(139,0,0,0.7), 3px 0 rgba(0,139,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    69%   { text-shadow: 2px 0 rgba(139,0,0,0.7), -3px 0 rgba(0,139,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    69.5% { text-shadow: -2px 0 rgba(139,0,0,0.7), 3px 0 rgba(0,139,139,0.7), 0 0 8px rgba(139,0,0,0.5), 0 0 8px rgba(0,139,139,0.5); }
+    70%   { text-shadow: none; }
+
+    70%, 83.2% { text-shadow: none; }
+
+    /* Burst D: aggressive wide -- red / blue / cyan */
+    84%   { text-shadow: -8px 0 rgba(139,0,0,0.8), 6px 0 rgba(0,0,139,0.8), -3px 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    84.5% { text-shadow: 9px 0 rgba(139,0,0,0.8), -5px 0 rgba(0,0,139,0.8), 4px 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    85%   { text-shadow: 0 0 rgba(139,0,0,0.8), 0 0 rgba(0,0,139,0.8), 0 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    85.5% { text-shadow: -10px 0 rgba(139,0,0,0.8), 7px 0 rgba(0,0,139,0.8), -5px 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    86%   { text-shadow: 5px 0 rgba(139,0,0,0.8), -8px 0 rgba(0,0,139,0.8), 4px 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    86.5% { text-shadow: -6px 0 rgba(139,0,0,0.8), 9px 0 rgba(0,0,139,0.8), -3px 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    87%   { text-shadow: 0 0 rgba(139,0,0,0.8), 0 0 rgba(0,0,139,0.8), 0 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    87.5% { text-shadow: -11px 0 rgba(139,0,0,0.8), 8px 0 rgba(0,0,139,0.8), -5px 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    88%   { text-shadow: 8px 0 rgba(139,0,0,0.8), -6px 0 rgba(0,0,139,0.8), 3px 0 rgba(0,139,139,0.8), 0 0 12px rgba(139,0,0,0.6), 0 0 12px rgba(0,0,139,0.6), 0 0 12px rgba(0,139,139,0.6); }
+    88.5% { text-shadow: none; }
+
+    92.8%, 100% { text-shadow: none; }
+  }
+
+  /* === Shared Card Wrapper === */
+  .card-wrapper {
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #333333;
+    background:
+      repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 6px,
+        rgba(255, 255, 255, 0.04) 6px,
+        rgba(255, 255, 255, 0.04) 12px
+      ),
+      #111;
+  }
+
+  /* === Shared Tags Bar === */
+  .tags-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 1rem;
+    background: transparent;
+  }
+
+  .tags-bar-item {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    color: #aaa;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .tags-bar-item:hover {
+    background: #333;
+    color: #fff;
+  }
+
+  @media (max-width: 768px) {
+    .tags-bar {
+      padding: 0.5rem 1rem;
+    }
+  }
+</style>

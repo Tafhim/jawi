@@ -1,0 +1,20 @@
+---
+import { normalizeTag } from '@jawi/core/utils/normalizeTag';
+
+interface Props {
+  tags: string[];
+}
+
+const { tags } = Astro.props;
+---
+
+{Array.isArray(tags) && tags.length > 0 && (
+  <div class="tags-bar">
+    {tags.map((tag) => {
+      const tagSlug = normalizeTag(tag);
+      return (
+        <a class="tags-bar-item" href={`/tags/${tagSlug}`}>{tag}</a>
+      );
+    })}
+  </div>
+)}

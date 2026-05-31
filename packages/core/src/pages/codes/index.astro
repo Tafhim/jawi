@@ -1,0 +1,306 @@
+---
+import Layout from '@jawi/core/layouts/MainLayout';
+import { findCodes } from '@jawi/core/utils/findCodes';
+import { formatDate } from '@jawi/core/utils/formatDate';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+const codes = await findCodes(config.content.dir);
+const allTags = [...new Set(codes.flatMap((c) => c.tags))].sort();
+---
+
+<Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <div class="codes-page">
+    <header class="codes-header">
+      <h1>Code Snippets</h1>
+      <p class="codes-description">Browse and explore code samples</p>
+      <div class="search-wrapper">
+        <input type="search" id="codeSearch" class="code-search-input" placeholder="Search by title or language..." autocomplete="off" />
+      </div>
+      {allTags.length > 0 && (
+        <div class="tags-filter-wrapper">
+          <span class="tags-label">Tags:</span>
+          <div id="tagsFilter" class="tags-filter">
+            {allTags.map((tag) => (
+              <button class="tag-filter-pill" data-tag={tag.toLowerCase()}>{tag}</button>
+            ))}
+          </div>
+        </div>
+      )}
+    </header>
+
+    {codes.length > 0 ? (
+      <div class="codes-grid">
+        {codes.map((code) => (
+          <a href={`/codes/${code.slug}`} class="code-card bottom-right-notch" data-title={code.title.toLowerCase()} data-lang={code.language.toLowerCase()} data-file={code.filename.toLowerCase()} data-tags={code.tags.map((t) => t.toLowerCase()).join(',')} data-time={code.localTime || ''}>
+            <div class="code-card-header">
+              <h3 class="code-card-title">{code.title}</h3>
+              <span class="code-card-lang">{code.language}</span>
+            </div>
+            {code.localTime && (
+              <time class="code-card-time" datetime={code.time}>{formatDate(code.localTime)}</time>
+            )}
+            {code.tags.length > 0 && (
+              <div class="code-card-tags">
+                {code.tags.map((tag) => (
+                  <span class="tag-pill">{tag}</span>
+                ))}
+              </div>
+            )}
+          </a>
+        ))}
+      </div>
+    ) : (
+      <p class="codes-empty">No code snippets found.</p>
+    )}
+  </div>
+</Layout>
+
+<style is:global>
+  .codes-page {
+    width: 100%;
+  }
+
+  .codes-header {
+    margin-bottom: 2rem;
+  }
+
+  .codes-header h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--color-foreground, #e0e0e0);
+    margin: 0 0 0.5rem 0;
+  }
+
+  .codes-description {
+    font-size: 1rem;
+    color: var(--color-muted, #999999);
+    margin: 0;
+  }
+
+  .codes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .code-card {
+    display: block;
+    padding: 1.25rem;
+    border: 1px solid #333333;
+    border-radius: 4px;
+    text-decoration: none;
+    background: #1a1a1a;
+    transition: border-color 0.2s ease, transform 0.15s ease;
+    cursor: pointer;
+    --notch-size: 10px;
+    --notch-line-width: 23px;
+    --notch-line-color: #333333;
+    --notch-line-offset: 3px;
+    --notch-corner-offset: 6px;
+  }
+
+  .code-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .code-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-foreground, #e0e0e0);
+    margin: 0;
+    line-height: 1.4;
+    flex: 1;
+  }
+
+  .code-card-lang {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    background: var(--color-bg-tertiary, #2a2a2a);
+    color: #888;
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .code-card-time {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .code-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .tag-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #aaa;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .codes-empty {
+    text-align: center;
+    color: var(--color-muted, #999999);
+    padding: 3rem 0;
+    font-size: 1rem;
+  }
+
+  .search-wrapper {
+    margin-top: 1.25rem;
+  }
+
+  .code-search-input {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    font-size: 0.95rem;
+    color: var(--color-foreground, #e0e0e0);
+    background: var(--color-bg-secondary, #1e1e1e);
+    border: 1px solid var(--color-border, #404040);
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .code-search-input:focus {
+    border-color: #666;
+  }
+
+  .code-search-input::placeholder {
+    color: var(--color-muted, #999999);
+  }
+
+  .search-hidden {
+    display: none !important;
+  }
+
+  .tags-filter-wrapper {
+    margin-top: 0.75rem;
+  }
+
+  .tags-label {
+    font-size: 0.8rem;
+    color: var(--color-muted, #999999);
+    margin-bottom: 0.4rem;
+    display: block;
+  }
+
+  .tags-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .tag-filter-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #aaa;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    font-family: inherit;
+  }
+
+  .tag-filter-pill:hover {
+    background: #333;
+    color: #fff;
+  }
+
+  .tag-active {
+    background: #333 !important;
+    border-color: #555 !important;
+    color: #fff !important;
+  }
+
+  .tag-filter-pill:hover + .tag-active,
+  .tag-active:hover {
+    background: #555 !important;
+    border-color: #777 !important;
+  }
+</style>
+
+<script>
+  (function () {
+    const searchInput = document.getElementById('codeSearch');
+    const tagsFilter = document.getElementById('tagsFilter');
+    const cards = document.querySelectorAll('.code-card');
+    let selectedTags = new Set();
+
+    function applyFilters () {
+      const query = searchInput.value.toLowerCase().trim();
+      let visible = 0;
+
+      cards.forEach(function (card) {
+        const matchTitle = card.getAttribute('data-title').includes(query);
+        const matchLang = card.getAttribute('data-lang').includes(query);
+        const matchFile = card.getAttribute('data-file').includes(query);
+        const cardTags = card.getAttribute('data-tags').split(',');
+
+        const matchSearch = query === '' || matchTitle || matchLang || matchFile;
+        const matchTags = selectedTags.size === 0 || cardTags.some(function (t) { return selectedTags.has(t); });
+
+        if (matchSearch && matchTags) {
+          card.classList.remove('search-hidden');
+          visible++;
+        } else {
+          card.classList.add('search-hidden');
+        }
+      });
+
+      let noResults = document.querySelector('.no-results');
+      if (visible === 0 && (query !== '' || selectedTags.size > 0)) {
+        if (!noResults) {
+          const msg = document.createElement('p');
+          msg.className = 'no-results';
+          if (query === '' && selectedTags.size > 0) {
+            msg.textContent = 'No code snippets match the selected tags.';
+          } else {
+            msg.textContent = 'No code snippets match your search.';
+          }
+          document.querySelector('.codes-grid').appendChild(msg);
+        } else if (query !== '' && selectedTags.size > 0) {
+          noResults.textContent = 'No code snippets match your search.';
+        } else if (query === '' && selectedTags.size > 0) {
+          noResults.textContent = 'No code snippets match the selected tags.';
+        }
+      } else if (noResults && visible > 0) {
+        noResults.remove();
+      }
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+
+    if (tagsFilter) {
+      tagsFilter.addEventListener('click', function (e) {
+        const pill = e.target.closest('.tag-filter-pill');
+        if (!pill) return;
+
+        const tag = pill.getAttribute('data-tag');
+        if (selectedTags.has(tag)) {
+          selectedTags.delete(tag);
+          pill.classList.remove('tag-active');
+        } else {
+          selectedTags.add(tag);
+          pill.classList.add('tag-active');
+        }
+        applyFilters();
+      });
+    }
+  })();
+</script>

@@ -1,0 +1,75 @@
+---
+import Layout from '@jawi/core/layouts/MainLayout';
+import Feed from '@jawi/core/components/Feed';
+import { findPosts } from '@jawi/core/utils/findPosts';
+import { paginate, generatePaginationPaths } from '@jawi/core/utils/paginate';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+
+export async function getStaticPaths() {
+  const config = await loadConfig(Astro.root);
+  const allPosts = await findPosts(config.content.dir);
+  return generatePaginationPaths(allPosts, config.content.postsPerPage);
+}
+
+const allPosts = await findPosts(config.content.dir);
+const currentPage = parseInt(Astro.params.page || '1');
+const { items: pagePosts, totalPages, hasPrevious, hasNext } = paginate(allPosts, currentPage, config.content.postsPerPage);
+
+const items = pagePosts.map(post => ({
+  ...post,
+  type: 'post' as const,
+}));
+---
+
+<Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
+  <main class="main-content">
+    <h1>Posts (Page {currentPage})</h1>
+    <Feed
+      posts={items}
+      totalPages={totalPages}
+      currentPage={currentPage}
+      hasPrevious={hasPrevious}
+      hasNext={hasNext}
+      basePath="/posts/page"
+    />
+  </main>
+</Layout>
+
+<style>
+  .main-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .main-content h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: #ffffff;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #333333;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      padding: 0 0.75rem;
+    }
+
+    .main-content h1 {
+      font-size: 1.5rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .main-content {
+      padding: 0 0.5rem;
+    }
+
+    .main-content h1 {
+      font-size: 1.25rem;
+    }
+  }
+</style>

@@ -1,0 +1,376 @@
+---
+// No server-side props needed -- fully client-side
+---
+
+<div id="thought-modal-backdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="thought-modal-title">
+    <button class="modal-close" aria-label="Close modal">&times;</button>
+    <div id="thought-modal-title" class="modal-meta"></div>
+    <div id="thought-modal-content" class="modal-content"></div>
+    <div class="modal-footer">
+      <button class="modal-permalink" aria-label="Copy permalink">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span class="permalink-label">Copy permalink</span>
+        <span class="permalink-copied" hidden>Copied!</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Load marked from CDN for client-side markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    // Inlined normalizeTag — client:load scripts cannot import from node_modules,
+    // so we duplicate the simple tag normalization logic here.
+    function normalizeTag(tag) {
+      return tag.replace(/^#+/, '').toLowerCase();
+    }
+
+    const backdrop = document.getElementById('thought-modal-backdrop');
+    const modalContainer = backdrop?.querySelector('.modal-container');
+    const closeBtn = backdrop?.querySelector('.modal-close');
+    const permalinkBtn = backdrop?.querySelector('.modal-permalink');
+    const permalinkLabel = permalinkBtn?.querySelector('.permalink-label');
+    const permalinkCopied = permalinkBtn?.querySelector('.permalink-copied');
+    const titleEl = document.getElementById('thought-modal-title');
+    const contentEl = document.getElementById('thought-modal-content');
+
+    let currentSlug = '';
+
+    function closeModal() {
+      if (!backdrop) return;
+      backdrop.classList.remove('visible');
+      backdrop.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.width = '';
+      document.documentElement.style.overflow = '';
+      if (modalContainer) modalContainer.style.background = '';
+      currentSlug = '';
+    }
+
+    function openModal(data) {
+      if (!backdrop || !titleEl || !contentEl) return;
+
+      currentSlug = data.slug || '';
+
+      // Apply gradient background from the card
+      if (modalContainer && data.gradient) {
+        modalContainer.style.background = data.gradient;
+      } else if (modalContainer) {
+        modalContainer.style.background = '';
+      }
+
+      // Use pre-formatted display time from ThoughtCard (server-side formatDate)
+      const displayTime = data.displayTime || '';
+
+      let tagsHtml = '';
+      if (data.tags && data.tags.length > 0) {
+        tagsHtml = '<div class="modal-tags">' +
+          data.tags.map(t => {
+            const tagSlug = normalizeTag(t);
+            return `<a class="modal-tag" href="/tags/${tagSlug}">${t}</a>`;
+          }).join('') +
+          '</div>';
+      }
+
+      titleEl.innerHTML = `<time datetime="${data.time || ''}">${displayTime}</time>${tagsHtml}`;
+
+      // Reformat modal time to user's local timezone (if PUBLIC_TIMEZONE=USER)
+      const modalTimeEl = titleEl.querySelector('time');
+      if (modalTimeEl && window.__reformatModalTime && data.time) {
+        window.__reformatModalTime(data.time, modalTimeEl);
+      }
+
+      // Use pre-rendered HTML (with CodeContent embeds resolved) if available,
+      // otherwise fall back to client-side markdown parsing
+      if (data.contentHtml) {
+        contentEl.innerHTML = data.contentHtml;
+      } else {
+        contentEl.innerHTML = window.marked.parse(data.content);
+      }
+
+      backdrop.classList.add('visible');
+      backdrop.setAttribute('aria-hidden', 'false');
+
+      // Lock body scroll - prevent background page from scrolling
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+
+      closeBtn?.focus();
+    }
+
+    function copyPermalink() {
+      if (!currentSlug) return;
+      const url = `${window.location.origin}/?thought=${currentSlug}`;
+      navigator.clipboard.writeText(url).then(() => {
+        if (permalinkLabel) permalinkLabel.hidden = true;
+        if (permalinkCopied) permalinkCopied.hidden = false;
+        setTimeout(() => {
+          if (permalinkLabel) permalinkLabel.hidden = false;
+          if (permalinkCopied) permalinkCopied.hidden = true;
+        }, 2000);
+      });
+    }
+
+    // Event delegation for thought card clicks (single listener for all cards)
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('.thought-card');
+      if (!card) return;
+      // Don't open modal if clicking a link (e.g. tags)
+      if (e.target.closest('a')) return;
+
+      e.preventDefault();
+      const gradient = window.getComputedStyle(card).background;
+
+      openModal({
+        slug: card.dataset.slug,
+        content: card.dataset.content,
+        contentHtml: card.dataset.contentHtml,
+        time: card.dataset.time,
+        displayTime: card.dataset.displayTime,
+        tags: JSON.parse(card.dataset.tags),
+        gradient: gradient,
+      });
+    });
+
+    // Close on button click
+    closeBtn?.addEventListener('click', closeModal);
+
+    // Copy permalink
+    permalinkBtn?.addEventListener('click', copyPermalink);
+
+    // Close on backdrop click (outside modal)
+    backdrop?.addEventListener('click', (e) => {
+      if (e.target === backdrop) closeModal();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && backdrop?.classList.contains('visible')) {
+        closeModal();
+      }
+    });
+
+    // Prevent scroll bleed-through: when modal is open and content is at scroll
+    // boundary, wheel events should NOT propagate to the background page
+    if (modalContainer) {
+      modalContainer.addEventListener('wheel', (e) => {
+        if (!backdrop?.classList.contains('visible')) return;
+        const atTop = modalContainer.scrollTop <= 0;
+        const atBottom =
+          modalContainer.scrollTop + modalContainer.clientHeight >= modalContainer.scrollHeight;
+        if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    }
+
+    // Auto-open modal if URL has ?thought=slug
+    const params = new URLSearchParams(window.location.search);
+    const thoughtSlug = params.get('thought');
+    if (thoughtSlug) {
+      const card = document.querySelector(`.thought-card[data-slug="${thoughtSlug}"]`);
+      if (card) {
+        setTimeout(() => {
+          openModal({
+            slug: card.dataset.slug,
+            content: card.dataset.content,
+            contentHtml: card.dataset.contentHtml,
+            time: card.dataset.time,
+            displayTime: card.dataset.displayTime,
+            tags: JSON.parse(card.dataset.tags),
+            gradient: window.getComputedStyle(card).background,
+          });
+        }, 100);
+      }
+    }
+  });
+</script>
+
+<style is:global>
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  padding: 1rem;
+}
+
+.modal-backdrop.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-container {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 2rem;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.modal-close:hover {
+  color: #fff;
+  background: #333;
+}
+
+.modal-meta {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.modal-meta time {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.modal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.modal-tag {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #aaa;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.modal-tag:hover {
+  background: #333;
+  color: #fff;
+}
+
+.modal-content {
+  color: #e0e0e0;
+  font-size: 1rem;
+  line-height: 1.7;
+  word-wrap: break-word;
+}
+
+.modal-content p {
+  margin-bottom: 1rem;
+}
+
+.modal-content p:has(+ .code-embed) {
+  margin-bottom: 0;
+}
+
+.modal-content code {
+  background: #0d0d0d;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.modal-content pre {
+  background: #0d0d0d;
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.modal-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.modal-footer {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-permalink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #888;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.modal-permalink:hover {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+.modal-permalink svg {
+  flex-shrink: 0;
+}
+
+.permalink-copied {
+  color: #4ade80;
+}
+
+@media (max-width: 768px) {
+  .modal-container {
+    padding: 1.5rem;
+    max-height: 90vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-container {
+    padding: 1.25rem;
+  }
+
+  .modal-content {
+    font-size: 0.9rem;
+  }
+}
+</style>
