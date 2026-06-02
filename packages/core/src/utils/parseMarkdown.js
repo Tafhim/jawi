@@ -24,6 +24,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { parseFrontmatter } from './parseFrontmatter.js';
 import { findCodeBySlug } from './findCodes.js';
+import { convertEmojis } from './emoji.js';
 
 /**
  * Get the build-time cache directory path.
@@ -341,6 +342,9 @@ async function parseMarkdown(content, filename, codes = [], config = null) {
     embeds.push({ placeholder, codeHtml: resolveCode(slug, codes, config) });
     return placeholder;
   });
+
+  // Convert emoji shortcodes to Unicode before markdown parsing
+  contentNoEmbeds = convertEmojis(contentNoEmbeds);
 
   // Convert markdown to HTML
   let html = marked.parse(contentNoEmbeds);

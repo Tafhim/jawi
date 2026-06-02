@@ -10,6 +10,7 @@ export { loadConfig, defaultConfig, validateConfig, validateTimezone, validateDa
 // Parsing
 export { parseFrontmatter } from './parseFrontmatter.js';
 export { parseMarkdown } from './parseMarkdown.js';
+export { convertEmojis, EMOJI_MAP } from './emoji.js';
 
 // Content finders
 export { findPosts, findPostBySlug, getPostsByTag, getUniqueTags } from './findPosts.js';

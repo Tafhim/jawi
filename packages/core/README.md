@@ -478,6 +478,446 @@ tags:
 ---
 ```
 
+## Emoji Support
+
+Use emoji shortcodes in your markdown content with `:shortcode:` syntax. They are automatically converted to Unicode emoji characters during build.
+
+```markdown
+I love coding :rocket: :heart:
+This feature is :fire: and :100:
+```
+
+Shortcodes are case-insensitive (`:Smile:` and `:smile:` both work).
+
+### Supported Emojis
+
+**Smileys & Emotion**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:grinning:` | | `:smiley:` | | `:smile:` | |
+| `:grin:` | | `:laughing:` | | `:sweat_smile:` | |
+| `:rofl:` | | `:joy:` | | `:wink:` | |
+| `:blush:` | | `:innocent:` | | `:heart_eyes:` | |
+| `:kissing_heart:` | | `:kissing:` | | `:kissing_smiling_eyes:` | |
+| `:kissing_closed_eyes:` | | `:yum:` | | `:stuck_out_tongue:` | |
+| `:stuck_out_tongue_winking_eye:` | | `:stuck_out_tongue_closed_eyes:` | | `:money_mouth:` | |
+| `:hugging:` | | `:thinking:` | | `:shy:` | |
+| `:relieved:` | | `:pensive:` | | `:sleeping:` | |
+| `:mask:` | | `:nauseated:` | | `:sneezing:` | |
+| `:dizzy:` | | `:cool:` | | `:sunglasses:` | |
+| `:nerd:` | | `:clown:` | | `:crying_cat_face:` | |
+| `:scream:` | | `:open_mouth:` | | `:hushed:` | |
+| `:astonished:` | | `:flushed:` | | `:dazed:` | |
+| `:disappointed_relieved:` | | `:cry:` | | `:sob:` | |
+| `:frowning:` | | `:anguished:` | | `:weary:` | |
+| `:tired_face:` | | `:sleepy:` | | `:frowning_face:` | |
+| `:no_mouth:` | | `:neutral_face:` | | `:expressionless:` | |
+| `:unamused:` | | `:roll_eyes:` | | `:grimacing:` | |
+| `:lying_face:` | | `:smirk:` | | `:confounded:` | |
+| `:upsidedown_face:` | | `:zip_mouth:` | | `:raised_eyebrow:` | |
+| `:face_with_hand_over_mouth:` | | `:face_with_symbols_over_mouth:` | | `:exploding_head:` | |
+| `:face_with_thermometer:` | | `:face_with_head_bandage:` | | `:monocle:` | |
+
+**Gestures & Hands**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:thumbsup:` | | `:thumbsdown:` | | `:clap:` | |
+| `:wave:` | | `:raised_hands:` | | `:open_hands:` | |
+| `:palms_up:` | | `:handshake:` | | `:pray:` | |
+| `:flexed_biceps:` | | `:muscle:` | | `:fist:` | |
+| `:fist_raised:` | | `:fist_oncoming:` | | `:crossed_fingers:` | |
+| `:vulcan_salute:` | | `:pinching_hand:` | | `:point_up:` | |
+| `:point_up_2:` | | `:point_down:` | | `:point_left:` | |
+| `:point_right:` | | `:middle_finger:` | | `:ok_hand:` | |
+| `:pinch:` | | `:raised_back_of_hand:` | | `:love_you:` | |
+| `:sign_of_the_horns:` | | `:call_me:` | | `:nail_care:` | |
+| `:selfie:` | | `:writing_hand:` | | | |
+
+**Hearts & Symbols**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:heart:` | | `:red_heart:` | | `:orange_heart:` | |
+| `:yellow_heart:` | | `:green_heart:` | | `:blue_heart:` | |
+| `:purple_heart:` | | `:black_heart:` | | `:white_heart:` | |
+| `:brown_heart:` | | `:broken_heart:` | | `:heart_exclamation:` | |
+| `:two_hearts:` | | `:revolving_hearts:` | | `:heartbeat:` | |
+| `:heart_pulse:` | | `:sparkling_heart:` | | `:growing_heart:` | |
+| `:check:` | | `:x:` | | `:question:` | |
+| `:grey_question:` | | `:grey_exclamation:` | | `:exclamation:` | |
+| `:bangbang:` | | `:interrobang:` | | `:curly_loop:` | |
+| `:loop:` | | `:part_alternation_mark:` | | `:eight_spoked_asterisk:` | |
+| `:negative_squared_cross_mark:` | | `:sparkles:` | | `:star:` | |
+| `:stars:` | | `:shining_star:` | | `:dizzy:` | |
+| `:fire:` | | `:flame:` | | `:lightning:` | |
+| `:zap:` | | `:cloud:` | | `:partly_sunny:` | |
+| `:sun_behind_cloud:` | | `:cloud_with_rain:` | | `:cloud_with_lightning:` | |
+| `:tornado:` | | `:fog:` | | `:umbrella:` | |
+| `:snowflake:` | | `:snowman:` | | `:snowman_with_snow:` | |
+| `:wind_face:` | | `:cyclone:` | | `:rainbow:` | |
+| `:sun:` | | `:moon:` | | `:new_moon:` | |
+| `:waxing_crescent_moon:` | | `:first_quarter_moon:` | | `:waxing_gibbous_moon:` | |
+| `:full_moon:` | | `:waning_gibbous_moon:` | | `:last_quarter_moon:` | |
+| `:waning_crescent_moon:` | | `:crescent_moon:` | | `:new_moon_face:` | |
+| `:first_quarter_moon_face:` | | `:last_quarter_moon_face:` | | `:thermometer:` | |
+| `:copyright:` | | `:registered:` | | `:trademark:` | |
+| `:id:` | | `:atom:` | | `:om:` | |
+| `:star_of_david:` | | `:wheel_of_dharma:` | | `:yin_yang:` | |
+| `:latin_cross:` | | `:orthodox_cross:` | | `:star_and_crescent:` | |
+| `:peace:` | | `:menorah:` | | `:six_pointed_star:` | |
+| `:shinto_shrine:` | | `:church:` | | `:mosque:` | |
+| `:synagogue:` | | `:kaaba:` | | | |
+
+**Zodiac**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:aries:` | | `:taurus:` | | `:gemini:` | |
+| `:cancer:` | | `:leo:` | | `:virgo:` | |
+| `:libra:` | | `:scorpius:` | | `:sagittarius:` | |
+| `:capricorn:` | | `:aquarius:` | | `:pisces:` | |
+| `:ophiuchus:` | | | | | |
+
+**Animals**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:dog:` | | `:cat:` | | `:mouse:` | |
+| `:hamster:` | | `:rabbit:` | | `:fox:` | |
+| `:bear:` | | `:panda:` | | `:koala:` | |
+| `:tiger:` | | `:lion:` | | `:cow:` | |
+| `:pig:` | | `:pig_nose:` | | `:frog:` | |
+| `:monkey:` | | `:see_no_evil:` | | `:hear_no_evil:` | |
+| `:speak_no_evil:` | | `:chicken:` | | `:penguin:` | |
+| `:bird:` | | `:baby_chick:` | | `:hatching_chick:` | |
+| `:hatched_chick:` | | `:duck:` | | `:eagle:` | |
+| `:owl:` | | `:bat:` | | `:wolf:` | |
+| `:boar:` | | `:turtle:` | | `:lizard:` | |
+| `:snake:` | | `:dragon:` | | `:dragon_face:` | |
+| `:whale:` | | `:whale2:` | | `:dolphin:` | |
+| `:fish:` | | `:tropical_fish:` | | `:blowfish:` | |
+| `:crocodile:` | | `:leopard:` | | `:tiger2:` | |
+| `:water_buffalo:` | | `:ox:` | | `:cow2:` | |
+| `:dromedary_camel:` | | `:camel:` | | `:elephant:` | |
+| `:rhinoceros:` | | `:gorilla:` | | `:racehorse:` | |
+| `:pig2:` | | `:goat:` | | `:ram:` | |
+| `:sheep:` | | `:monkey_face:` | | `:gibbon:` | |
+| `:feet:` | | `:paw_prints:` | | `:bug:` | |
+| `:ant:` | | `:bee:` | | `:honeybee:` | |
+| `:beetle:` | | `:lady_beetle:` | | `:cricket:` | |
+| `:butterfly:` | | `:snail:` | | `:spider:` | |
+| `:scorpion:` | | `:mosquito:` | | `:microbe:` | |
+
+**Food & Drink**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:pizza:` | | `:burger:` | | `:fries:` | |
+| `:hotdog:` | | `:chicken_leg:` | | `:popcorn:` | |
+| `:doughnut:` | | `:cookie:` | | `:bread:` | |
+| `:croissant:` | | `:baguette_bread:` | | `:pretzel:` | |
+| `:bagel:` | | `:cheese:` | | `:egg:` | |
+| `:cooking:` | | `:pancakes:` | | `:waffle:` | |
+| `:bacon:` | | `:steak:` | | `:poultry_leg:` | |
+| `:meat_on_bone:` | | `:cut_of_meat:` | | `:sandwich:` | |
+| `:canned_food:` | | `:hamburger:` | | `:fried_shrimp:` | |
+| `:curry:` | | `:sushi:` | | `:bento:` | |
+| `:ramen:` | | `:spaghetti:` | | `:shrimp:` | |
+| `:crab:` | | `:oyster:` | | `:ice_cream:` | |
+| `:icecream:` | | `:cake:` | | `:birthday:` | |
+| `:christmas_tree:` | | `:candy:` | | `:lollipop:` | |
+| `:custard:` | | `:honey_pot:` | | `:milk:` | |
+| `:coffee:` | | `:tea:` | | `:sake:` | |
+| `:champagne:` | | `:wine_glass:` | | `:cocktail:` | |
+| `:tropical_drink:` | | `:beer:` | | `:beers:` | |
+| `:champagne_glass:` | | `:tumbler_glass:` | | `:cup_with_straw:` | |
+| `:bubble_tea:` | | `:apple:` | | `:green_apple:` | |
+| `:lemon:` | | `:lime:` | | `:tangerine:` | |
+| `:banana:` | | `:watermelon:` | | `:grapes:` | |
+| `:strawberry:` | | `:melon:` | | `:cherries:` | |
+| `:peach:` | | `:mango:` | | `:pineapple:` | |
+| `:coconut:` | | `:kiwi:` | | `:avocado:` | |
+| `:tomato:` | | `:eggplant:` | | `:broccoli:` | |
+| `:leafy_green:` | | `:carrot:` | | `:corn:` | |
+| `:hot_pepper:` | | `:mushroom:` | | `:potato:` | |
+| `:sweet_potato:` | | `:peanuts:` | | `:ginger:` | |
+| `:pea:` | | | | | |
+
+**Nature**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:bouquet:` | | `:cherry_blossom:` | | `:white_flower:` | |
+| `:rosette:` | | `:rose:` | | `:wilted_flower:` | |
+| `:hibiscus:` | | `:sunflower:` | | `:blossom:` | |
+| `:tulip:` | | `:seedling:` | | `:potted_plant:` | |
+| `:evergreen_tree:` | | `:deciduous_tree:` | | `:palm_tree:` | |
+| `:cactus:` | | `:herb:` | | `:shamrock:` | |
+| `:four_leaf_clover:` | | `:maple_leaf:` | | `:fallen_leaf:` | |
+| `:leaves:` | | `:ear_of_rice:` | | `:moss:` | |
+| `:rock:` | | `:hologram:` | | `:hole:` | |
+| `:droplet:` | | `:sweat_drops:` | | `:umbrella:` | |
+| `:globe_showing_europe_africa:` | | `:globe_showing_americas:` | | `:globe_showing_asia_australia:` | |
+| `:earth_africa:` | | `:earth_americas:` | | `:earth_asia:` | |
+| `:volcano:` | | `:mountain:` | | `:mountain_snow:` | |
+| `:sunrise:` | | `:sunrise_over_mountains:` | | `:desert:` | |
+| `:desert_island:` | | `:beach_umbrella:` | | `:beach:` | |
+| `:ocean:` | | `:waterfall:` | | `:hot_springs:` | |
+| `:house:` | | `:house_with_garden:` | | `:houses:` | |
+| `:derelict_house:` | | `:school:` | | `:office:` | |
+| `:post_office:` | | `:european_post_office:` | | `:hospital:` | |
+| `:bank:` | | `:hotel:` | | `:love_hotel:` | |
+| `:convenience_store:` | | `:department_store:` | | `:european_castle:` | |
+| `:japanese_castle:` | | `:stadium:` | | `:classical_building:` | |
+| `:building_construction:` | | `:brick:` | | `:rock:` | |
+| `:wood:` | | `:hut:` | | `:church:` | |
+| `:mosque:` | | `:hindu_temple:` | | `:synagogue:` | |
+| `:shinto_shrine:` | | `:kaaba:` | | `:fountain:` | |
+| `:tokyo_tower:` | | `:statue_of_liberty:` | | `:foggy:` | |
+| `:night_with_stars:` | | `:city_sunset:` | | `:city_sunrise:` | |
+| `:city_dusk:` | | `:cityscape:` | | `:milky_way:` | |
+| `:bridge_at_night:` | | `:rainbow:` | | `:comet:` | |
+| `:satellite:` | | `:new_moon:` | | `:waxing_crescent_moon:` | |
+| `:first_quarter_moon:` | | `:waxing_gibbous_moon:` | | `:full_moon:` | |
+| `:waning_gibbous_moon:` | | `:last_quarter_moon:` | | `:waning_crescent_moon:` | |
+| `:crescent_moon:` | | `:new_moon_face:` | | `:first_quarter_moon_face:` | |
+| `:last_quarter_moon_face:` | | `:thermometer:` | | `:thermometer_face:` | |
+| `:thermometer_high:` | | `:thermometer_low:` | | `:umbrella_with_rain_drops:` | |
+| `:cloud_with_rain:` | | `:cloud_with_snow:` | | `:cloud_with_lightning:` | |
+| `:cloud_with_tornado:` | | `:high_voltage:` | | `:snowman_without_snow:` | |
+| `:sun_behind_small_cloud:` | | `:sun_behind_large_cloud:` | | `:sun_behind_rain_cloud:` | |
+| `:cloud_with_rain:` | | `:cloud_with_snow:` | | `:cloud_with_lightning:` | |
+| `:cloud_with_tornado:` | | `:fog:` | | `:wind_face:` | |
+| `:cyclone:` | | `:rainbow:` | | `:closed_umbrella:` | |
+
+**Activities & Sports**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:soccer:` | | `:basketball:` | | `:football:` | |
+| `:baseball:` | | `:softball:` | | `:tennis:` | |
+| `:volleyball:` | | `:rugby_football:` | | `:flying_disc:` | |
+| `:8ball:` | | `:golf:` | | `:golfing:` | |
+| `:bowling:` | | `:fishing_pole_and_fish:` | | `:running_shirt_with_sash:` | |
+| `:ski:` | | `:skier:` | | `:snowboarder:` | |
+| `:ice_skate:` | | `:curling_stone:` | | `:sled:` | |
+| `:dart:` | | `:yo_yo:` | | `:kite:` | |
+| `:bullseye:` | | `:pool_8_ball:` | | `:cricket_game:` | |
+| `:field_hockey:` | | `:ice_hockey:` | | `:lacrosse:` | |
+| `:squash_racquet_and_ball:` | | `:ringed_planet:` | | `:trophy:` | |
+| `:medal_sports:` | | `:first_place_medal:` | | `:second_place_medal:` | |
+| `:third_place_medal:` | | `:rosette:` | | `:reminder_ribbon:` | |
+| `:ticket:` | | `:tickets:` | | `:performing_arts:` | |
+| `:art:` | | `:microphone:` | | `:headphones:` | |
+| `:musical_score:` | | `:musical_note:` | | `:notes:` | |
+| `:saxophone:` | | `:accordion:` | | `:guitar:` | |
+| `:musical_keyboard:` | | `:trumpet:` | | `:violin:` | |
+| `:banjo:` | | `:drum:` | | `:long_drum:` | |
+| `:game_die:` | | `:chess_pawn:` | | `:jigsaw:` | |
+| `:video_game:` | | `:slot_machine:` | | `:automation:` | |
+| `:robot:` | | | | | |
+
+**Travel & Places**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:red_car:` | | `:taxi:` | | `:blue_car:` | |
+| `:bus:` | | `:trolleybus:` | | `:race_car:` | |
+| `:police_car:` | | `:ambulance:` | | `:fire_engine:` | |
+| `:minibus:` | | `:truck:` | | `:articulated_lorry:` | |
+| `:tractor:` | | `:motorcycle:` | | `:racing_motorcycle:` | |
+| `:bicycle:` | | `:kick_scooter:` | | `:skateboard:` | |
+| `:roller_skate:` | | `:busstop:` | | `:motorway:` | |
+| `:railway:` | | `:station:` | | `:airplane:` | |
+| `:small_airplane:` | | `:flight_departure:` | | `:flight_arrival:` | |
+| `:sailboat:` | | `:speedboat:` | | `:motor_boat:` | |
+| `:cruise_ship:` | | `:rocket:` | | `:satellite:` | |
+| `:seat:` | | `:anchor:` | | `:canoe:` | |
+| `:rowboat:` | | `:pedal:` | | `:helicopter:` | |
+| `:suspension_railway:` | | `:mountain_railway:` | | `:monorail:` | |
+| `:railway_car:` | | `:train:` | | `:mountain_cableway:` | |
+| `:aerial_tramway:` | | `:shipping:` | | `:fork_and_knife:` | |
+| `:bellhop_bell:` | | `:door:` | | `:couch:` | |
+| `:bed:` | | `:sleeping_accommodation:` | | `:toilet:` | |
+| `:shower:` | | `:bathtub:` | | `:clock:` | |
+| `:watch:` | | `:hourglass:` | | `:hourglass_flowing_sand:` | |
+| `:stopwatch:` | | `:timer:` | | `:alarm_clock:` | |
+| `:mantelpiece_clock:` | | `:compass:` | | `:map:` | |
+| `:world_map:` | | `:compass:` | | `:luggage:` | |
+| `:briefcase:` | | `:backpack:` | | `:passport_control:` | |
+| `:customs:` | | `:baggage_claim:` | | `:left_luggage:` | |
+
+**Objects**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:watch:` | | `:iphone:` | | `:calling:` | |
+| `:computer:` | | `:keyboard:` | | `:computer_mouse:` | |
+| `:trackball:` | | `:printer:` | | `:mouse_three_button:` | |
+| `:joystick:` | | `:clamp:` | | `:minidisc:` | |
+| `:floppy_disk:` | | `:cd:` | | `:dvd:` | |
+| `:abacus:` | | `:film_projector:` | | `:film_frames:` | |
+| `:camera:` | | `:camera_with_flash:` | | `:video_camera:` | |
+| `:vhs:` | | `:tv:` | | `:radio:` | |
+| `:studio_microphone:` | | `:level_slider:` | | `:control_knobs:` | |
+| `:microphone:` | | `:headphones:` | | `:broadcast:` | |
+| `:personal_computer:` | | `:laptop:` | | `:desktop:` | |
+| `:printer:` | | `:optical_disk:` | | `:dvd:` | |
+| `:abacus:` | | `:film_projector:` | | `:clapper:` | |
+| `:tv:` | | `:camera:` | | `:video_camera:` | |
+| `:movie_camera:` | | `:film_strip:` | | `:telephone:` | |
+| `:telephone_receiver:` | | `:pager:` | | `:satellite_antenna:` | |
+| `:battery:` | | `:electric_plug:` | | `:bulb:` | |
+| `:flashlight:` | | `:candle:` | | `:fire_extinguisher:` | |
+| `:bucket:` | | `:broom:` | | `:basket:` | |
+| `:roll_of_paper:` | | `:toilet:` | | `:shower:` | |
+| `:bathtub:` | | `:mouse:` | | `:notebook:` | |
+| `:ledger:` | | `:notebook_with_decorative_cover:` | | `:closed_book:` | |
+| `:book:` | | `:green_book:` | | `:blue_book:` | |
+| `:orange_book:` | | `:books:` | | `:bookmark:` | |
+| `:label:` | | `:bookmark_tabs:` | | `:card_index:` | |
+| `:chart:` | | `:chart_with_upwards_trend:` | | `:chart_with_downwards_trend:` | |
+| `:bar_chart:` | | `:clipboard:` | | `:calendar:` | |
+| `:date:` | | `:wrench:` | | `:hammer:` | |
+| `:hammer_and_wrench:` | | `:pick:` | | `:hammer_and_pick:` | |
+| `:tools:` | | `:screwdriver:` | | `:nut_and_bolt:` | |
+| `:gear:` | | `:link:` | | `:chains:` | |
+| `:magnet:` | | `:gun:` | | `:bow_and_arrow:` | |
+| `:shield:` | | `:dagger:` | | `:crossed_swords:` | |
+| `:smoking:` | | `:skull_and_crossbones:` | | `:coffin:` | |
+| `:funeral_urn:` | | `:moyai:` | | `:prayer_beads:` | |
+| `:nazar_amulet:` | | `:barber:` | | `:alembic:` | |
+| `:test_tube:` | | `:petri_dish:` | | `:dna:` | |
+| `:microscope:` | | `:telescope:` | | `:satellite:` | |
+| `:pill:` | | `:syringe:` | | `:drop_of_blood:` | |
+| `:bandage:` | | `:stethoscope:` | | `:x_ray:` | |
+| `:door:` | | `:elevator:` | | `:mirror:` | |
+| `:window:` | | `:bed:` | | `:couch:` | |
+| `:toilet:` | | `:shower:` | | `:bathtub:` | |
+| `:mouse_trap:` | | `:razor:` | | `:lotion_bottle:` | |
+| `:safety_pin:` | | `:broom:` | | `:basket:` | |
+| `:toilet_paper:` | | `:keys:` | | `:old_key:` | |
+| `:moneybag:` | | `:coin:` | | `:yen:` | |
+| `:dollar:` | | `:euro:` | | `:pound:` | |
+| `:money_with_wings:` | | `:credit_card:` | | `:receipt:` | |
+| `:chart:` | | `:gem:` | | `:scales:` | |
+| `:package:` | | `:box:` | | `:mailbox:` | |
+| `:envelope:` | | `:inbox_tray:` | | `:outbox_tray:` | |
+| `:paperclip:` | | `:paperclips:` | | `:straight_ruler:` | |
+| `:triangular_ruler:` | | `:scissors:` | | `:card_index:` | |
+| `:file_cabinet:` | | `:wastebasket:` | | `:lock:` | |
+| `:unlock:` | | `:lock_with_ink_pen:` | | `:closed_lock_with_key:` | |
+| `:key:` | | `:mailbox_closed:` | | `:mailbox_with_mail:` | |
+| `:mailbox_with_no_mail:` | | `:postbox:` | | `:ballot_box:` | |
+| `:horn:` | | `:email:` | | `:envelope_with_arrow:` | |
+| `:incoming_envelope:` | | `:postal_horn:` | | `:inbox_tray:` | |
+| `:package:` | | `:mailbox:` | | `:mailbox_closed:` | |
+| `:mailbox_with_mail:` | | `:mailbox_with_no_mail:` | | `:postbox:` | |
+| `:ballot_box:` | | `:horn:` | | `:email:` | |
+| `:envelope_with_arrow:` | | `:incoming_envelope:` | | `:postal_horn:` | |
+
+**People & Body**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:person_facepalming:` | | `:person_shrugging:` | | `:man:` | |
+| `:woman:` | | `:baby:` | | `:older_adult:` | |
+| `:person:` | | `:princess:` | | `:prince:` | |
+| `:santa:` | | `:mrs_claus:` | | `:superhero:` | |
+| `:supervillain:` | | `:detective:` | | `:ninja:` | |
+| `:judge:` | | `:farmer:` | | `:cook:` | |
+| `:mechanic:` | | `:factory_worker:` | | `:teacher:` | |
+| `:singer:` | | `:artist:` | | `:pilot:` | |
+| `:astronaut:` | | `:police_officer:` | | `:soldier:` | |
+| `:construction_worker:` | | `:guard:` | | `:health_worker:` | |
+| `:firefighter:` | | `:person_tipping_hand:` | | `:person_gesturing_ok:` | |
+| `:person_bowing:` | | `:person_raising_hand:` | | `:person_frowning:` | |
+| `:person_gesturing_no:` | | `:person_standing:` | | `:person_kneeling:` | |
+| `:person_running:` | | `:person_walking:` | | `:person_in_lotus_position:` | |
+| `:person_climbing:` | | `:person_in_steamy_room:` | | `:person_swimming:` | |
+| `:person_bouncing_ball:` | | `:person_lifting_weights:` | | `:person_biking:` | |
+| `:person_mountain_biking:` | | `:person_rowing:` | | `:person_surfing:` | |
+| `:person_playing_handball:` | | `:person_juggling:` | | `:dancer:` | |
+| `:man_dancing:` | | `:business_suit_levitating:` | | `:people_with_bunny_ears:` | |
+| `:person_with_pouting_face:` | | `:person_facepalming:` | | | |
+
+**Miscellaneous**
+
+| Code | Emoji | Code | Emoji | Code | Emoji |
+|------|-------|------|-------|------|-------|
+| `:smiley_cat:` | | `:smile_cat:` | | `:joy_cat:` | |
+| `:heart_eyes_cat:` | | `:smiling_imp:` | | `:imp:` | |
+| `:japanese_ogre:` | | `:japanese_goblin:` | | `:hankey:` | |
+| `:turd:` | | `:poop:` | | `:skull:` | |
+| `:skull_and_crossbones:` | | `:ghost:` | | `:alien:` | |
+| `:space_invader:` | | `:robot:` | | `:jack_o_lantern:` | |
+| `:shushing_face:` | | `:face_with_symbols_over_mouth:` | | `:anger_symbol:` | |
+| `:bomb:` | | `:zzz:` | | `:speech_balloon:` | |
+| `:eye_speech_bubble:` | | `:left_speech_bubble:` | | `:right_anger_bubble:` | |
+| `:thought_balloon:` | | `:kiss:` | | `:love_letter:` | |
+| `:couple:` | | `:two_men_holding_hands:` | | `:two_women_holding_hands:` | |
+| `:family:` | | `:family_man_woman_girl:` | | `:family_man_woman_boy:` | |
+| `:family_man_woman_girl_boy:` | | `:family_man_boy:` | | `:family_man_boys:` | |
+| `:family_woman_girl:` | | `:family_woman_boy:` | | `:family_woman_girl_boy:` | |
+| `:family_woman_girls:` | | `:family_woman_boys:` | | `:family_man_man_boy:` | |
+| `:family_man_man_girl:` | | `:family_man_man_girl_boy:` | | `:family_man_man_girls:` | |
+| `:family_man_man_boys:` | | `:family_woman_woman_girl:` | | `:family_woman_woman_boy:` | |
+| `:family_woman_woman_girl_boy:` | | `:family_woman_woman_girls:` | | `:family_woman_woman_boys:` | |
+| `:crying_face:` | | `:angry:` | | `:rage:` | |
+| `:explosion:` | | `:boom:` | | `:collision:` | |
+| `:sweat_drops:` | | `:dash:` | | `:dizzy_symbol:` | |
+| `:ribbon:` | | `:gift:` | | `:reminder_ribbon:` | |
+| `:medals_military:` | | `:medal_military:` | | `:medal_sports:` | |
+| `:rosette:` | | `:ticket:` | | `:admission_tickets:` | |
+| `:performing_arts:` | | `:art:` | | `:circus_tent:` | |
+| `:artist_palette:` | | `:thread:` | | `:sewing_needle:` | |
+| `:yarn:` | | `:knitting_needles:` | | `:ring:` | |
+| `:gem:` | | `:m:` | | `:copyright:` | |
+| `:registered:` | | `:trademark:` | | `:id:` | |
+| `:atom:` | | `:om:` | | `:star_of_david:` | |
+| `:wheel_of_dharma:` | | `:yin_yang:` | | `:latin_cross:` | |
+| `:orthodox_cross:` | | `:star_and_crescent:` | | `:peace:` | |
+| `:menorah:` | | `:six_pointed_star:` | | `:aries:` | |
+| `:taurus:` | | `:gemini:` | | `:cancer:` | |
+| `:leo:` | | `:virgo:` | | `:libra:` | |
+| `:scorpius:` | | `:sagittarius:` | | `:capricorn:` | |
+| `:aquarius:` | | `:pisces:` | | `:ophiuchus:` | |
+| `:shinto_shrine:` | | `:church:` | | `:mosque:` | |
+| `:synagogue:` | | `:kaaba:` | | `:frowning:` | |
+| `:persevere:` | | `:confused:` | | `:slightly_frowning_face:` | |
+| `:no_good:` | | `:ok_woman:` | | `:information_desk_person:` | |
+| `:raising_hand:` | | `:bow:` | | `:see_no_evil:` | |
+| `:hear_no_evil:` | | `:speak_no_evil:` | | `:kiss:` | |
+| `:love_letter:` | | `:couple:` | | `:two_men_holding_hands:` | |
+| `:two_women_holding_hands:` | | `:family:` | | `:family_man_woman_girl:` | |
+| `:family_man_woman_boy:` | | `:family_man_woman_girl_boy:` | | `:family_man_boy:` | |
+| `:family_man_boys:` | | `:family_woman_girl:` | | `:family_woman_boy:` | |
+| `:family_woman_girl_boy:` | | `:family_woman_girls:` | | `:family_woman_boys:` | |
+| `:family_man_man_boy:` | | `:family_man_man_girl:` | | `:family_man_man_girl_boy:` | |
+| `:family_man_man_girls:` | | `:family_man_man_boys:` | | `:family_woman_woman_girl:` | |
+| `:family_woman_woman_boy:` | | `:family_woman_woman_girl_boy:` | | `:family_woman_woman_girls:` | |
+| `:family_woman_woman_boys:` | | | | | |
+
+### Extending the Emoji Map
+
+The emoji mapping lives in `packages/core/src/utils/emoji.js`. To add more emojis:
+
+1. Open `emoji.js` and add entries to the appropriate category object (e.g., `smileys`, `animals`, etc.)
+2. Each entry maps a shortcode name (lowercase, underscore-separated) to a Unicode character
+3. The `EMOJI_MAP` export is automatically built from all category objects
+
+```js
+// Example: add a new emoji to the smileys category
+const smileys = {
+  // ... existing entries ...
+  my_custom_emoji: '\u{1F600}',  // shortcode :my_custom_emoji:
+};
+```
+
+You can also import `EMOJI_MAP` and `convertEmojis` from `@jawi/core/utils` for programmatic use.
+
 ## License
 
 MIT
