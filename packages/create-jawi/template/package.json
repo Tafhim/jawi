@@ -10,6 +10,7 @@
   "dependencies": {
     "astro": "^6.3.8",
     "@astrojs/mdx": "^5.0.6",
-    "@jawi/core": "{{CORE_PATH}}"
+    "@jawi/core": "{{CORE_PATH}}",
+    "piccolore": "^0.1.3"
   }
 }
