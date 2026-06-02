@@ -361,6 +361,37 @@ npx jawi copy layout MainLayout            # Copies MainLayout, updates all page
 
 After this, your local `MainLayout.astro` imports `../components/Footer.astro` (your copy) instead of `@jawi/core/components/Footer`. Components you haven't overridden (like `Header`) continue to import from the framework.
 
+### Example Scenario: Overriding a Component Imported by a Layout
+
+A common situation: you want to customise `Header.astro` (e.g. change the navigation links). You create your own version at `src/components/Header.astro`, but after rebuilding, the site still shows the default Header.
+
+**Why this happens:** `Header` is not imported by pages directly -- it is imported by `MainLayout.astro`, which lives inside the framework package and uses a hardcoded alias import:
+
+```astro
+<!-- Inside @jawi/core/src/layouts/MainLayout.astro -->
+import Header from '@jawi/core/components/Header';
+```
+
+This alias resolves to the framework's own `Header.astro`. Your local `src/components/Header.astro` is never referenced. Simply placing a file in `src/components/` is not enough -- the import chain must be rewired.
+
+**The fix -- use the cascade in the right order:**
+
+```bash
+# Step 1: Create or place your custom Header.astro in src/components/
+# (You may have already done this)
+
+# Step 2: Copy MainLayout -- this does three things:
+#   a) Copies MainLayout.astro to src/layouts/
+#   b) Rewires all your pages to import your local MainLayout
+#   c) Detects your existing src/components/Header.astro and updates
+#      the import inside MainLayout to point to your local copy
+npx jawi copy layout MainLayout
+```
+
+After this, your local `MainLayout.astro` imports `../components/Header.astro` (your custom version) instead of `@jawi/core/components/Header`. Rebuild and your changes appear.
+
+**Key rule:** If the thing you want to override is imported by a layout or another component you haven't copied yet, copy the parent first. The cascade only rewires imports in files that exist in your project.
+
 To review changes between your override and the framework default:
 
 ```bash
