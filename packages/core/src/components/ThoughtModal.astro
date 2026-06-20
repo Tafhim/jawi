@@ -5,10 +5,8 @@
 <div id="thought-modal-backdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="thought-modal-title">
     <button class="modal-close" aria-label="Close modal">&times;</button>
-    <div id="capture-target">
-      <div id="thought-modal-title" class="modal-meta"></div>
-      <div id="thought-modal-content" class="modal-content"></div>
-    </div>
+    <div id="thought-modal-title" class="modal-meta"></div>
+    <div id="thought-modal-content" class="modal-content"></div>
     <div class="modal-footer">
       <button class="modal-screenshot" aria-label="Capture screenshot">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -38,7 +36,6 @@
 
     const backdrop = document.getElementById('thought-modal-backdrop');
     const modalContainer = backdrop?.querySelector('.modal-container');
-    const captureTarget = document.getElementById('capture-target');
     const closeBtn = backdrop?.querySelector('.modal-close');
     const screenshotBtn = backdrop?.querySelector('.modal-screenshot');
     const screenshotLabel = screenshotBtn?.querySelector('.screenshot-label');
@@ -134,7 +131,7 @@
     }
 
     async function captureScreenshot() {
-      if (!captureTarget) return;
+      if (!modalContainer) return;
 
       // Button feedback
       if (screenshotLabel) screenshotLabel.hidden = true;
@@ -146,25 +143,33 @@
         if (document.fonts?.ready) await document.fonts.ready;
         await new Promise(r => setTimeout(r, 200));
 
-        // Temporarily move gradient background to capture target
-        const gradient = modalContainer?.style.background || '';
-        if (gradient) captureTarget.style.background = gradient;
+        // Hide chrome elements using display:none (invisible, no visual flash)
+        if (closeBtn) closeBtn.style.display = 'none';
+        const footer = modalContainer.querySelector('.modal-footer');
+        if (footer) footer.style.display = 'none';
 
-        // Hide close button during capture
-        if (closeBtn) closeBtn.style.visibility = 'hidden';
+        // Temporarily remove scroll constraints so html2canvas captures full content
+        const origMaxHeight = modalContainer.style.maxHeight;
+        const origOverflow = modalContainer.style.overflowY;
+        modalContainer.style.maxHeight = 'none';
+        modalContainer.style.overflowY = 'visible';
 
         // Dynamic import to avoid SSR bundling
         const { default: html2canvas } = await import('html2canvas');
 
-        const canvas = await html2canvas(captureTarget, {
+        const canvas = await html2canvas(modalContainer, {
           backgroundColor: '#1a1a1a',
           scale: window.devicePixelRatio || 2,
           logging: false,
         });
 
-        // Restore
-        captureTarget.style.background = '';
-        if (closeBtn) closeBtn.style.visibility = '';
+        // Restore scroll constraints
+        modalContainer.style.maxHeight = origMaxHeight;
+        modalContainer.style.overflowY = origOverflow;
+
+        // Restore chrome elements
+        if (closeBtn) closeBtn.style.display = '';
+        if (footer) footer.style.display = '';
 
         // Download via blob
         canvas.toBlob((blob) => {
@@ -429,10 +434,6 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-}
-
-#capture-target {
-  background: inherit;
 }
 
 .modal-screenshot,
