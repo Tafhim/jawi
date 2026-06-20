@@ -396,6 +396,7 @@ To review changes between your override and the framework default:
 
 ```bash
 npx jawi diff page index
+npx jawi diff page codes/[slug]
 npx jawi diff component PostCard
 npx jawi diff layout MainLayout
 ```
@@ -431,6 +432,7 @@ After upgrading, review any affected overrides:
 
 ```bash
 npx jawi diff page index
+npx jawi diff page codes/[slug]
 npx jawi diff layout MainLayout
 ```
 
@@ -479,8 +481,8 @@ time: 2026-05-24 00:00:00
 slug: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
 title: My Post Title
 tags:
-  - "#coding"
-  - "#ai"
+  - "coding"
+  - "ai"
 images:
   - "/images/photo.jpg"
 ---
@@ -493,7 +495,9 @@ images:
 time: 2026-05-24 00:00:00
 title: Hello World
 language: python
-tags: [python, example]
+tags:
+  - "python"
+  - "example"
 ---
 ```
 
@@ -505,7 +509,7 @@ time: 2026-05-24 00:00:00
 slug: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
 color: solid-blue
 tags:
-  - "#random"
+  - "random"
 ---
 ```
 

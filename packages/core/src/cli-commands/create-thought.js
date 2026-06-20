@@ -104,7 +104,7 @@ export async function createThought(args) {
 
   let tagsBlock = '';
   if (parsedTags.length > 0) {
-    tagsBlock = parsedTags.map(t => `  - "#${t}"`).join('\n');
+    tagsBlock = parsedTags.map(t => `  - "${t}"`).join('\n');
   }
 
   const colorLine = color ? `color: ${color}\n` : '';

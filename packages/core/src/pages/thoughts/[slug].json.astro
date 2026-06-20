@@ -1,0 +1,36 @@
+---
+import { findThoughts } from '@jawi/core/utils/findThoughts';
+import { formatDate } from '@jawi/core/utils/formatDate';
+import { parseThoughtColor } from '@jawi/core/utils/parseThoughtColor';
+import { loadConfig } from '@jawi/core/config';
+
+const config = await loadConfig(Astro.root);
+
+// Generate static paths for every thought
+export async function getStaticPaths() {
+  const config = await loadConfig(Astro.root);
+  const allThoughts = await findThoughts(config.content.dir);
+  return allThoughts.map((thought) => ({
+    params: { slug: thought.slug },
+    props: { thought },
+  }));
+}
+
+const { thought } = Astro.props;
+const displayTime = thought.localTime ? formatDate(thought.localTime) : '';
+const gradient = parseThoughtColor(thought.color);
+
+// Return JSON response
+return new Response(JSON.stringify({
+  slug: thought.slug,
+  content: thought.content,
+  contentHtml: thought.contentHtml,
+  time: thought.time,
+  displayTime,
+  tags: thought.tags,
+  color: thought.color,
+  gradient,
+}), {
+  headers: { 'Content-Type': 'application/json' },
+});
+---

@@ -52,6 +52,32 @@ export function getApiVersion() {
  */
 export const BREAKING_CHANGES = [
   {
+    version: '1.1.0',
+    changes: [
+      {
+        type: 'changed',
+        from: 'tags stored with "#" prefix in frontmatter',
+        to: 'tags stored without "#" prefix in frontmatter',
+        description: 'Tag format changed: frontmatter tags no longer include "#" prefix. Tags are now displayed with "#" in HTML output (rendering layer). Existing content files with "#" prefix continue to work (rendering detects and handles both formats). New content created with create-post/create-code/create-thought will use the new format.',
+        migration: 'Optional: run `jawi migrate tags` to strip "#" prefix from existing content files. Or manually edit frontmatter to remove "#" from tag values. No action required — rendering is backward compatible.',
+      },
+      {
+        type: 'changed',
+        from: 'create-code --tags used comma-separated values',
+        to: 'create-code --tags uses space-separated values',
+        description: 'The create-code CLI now uses space-separated tags (consistent with create-post and create-thought).',
+        migration: 'Update any scripts that pass comma-separated tags to create-code to use space-separated values instead.',
+      },
+      {
+        type: 'changed',
+        from: 'code pages rendered tags as <span> elements',
+        to: 'code pages render tags as <a> links',
+        description: 'Code snippet pages now render tags as clickable links to tag pages (consistent with posts and thoughts).',
+        migration: 'If you have overridden src/pages/codes/[slug].astro or src/pages/codes/index.astro, update the tag rendering to use <a> elements with href="/tags/{slug}". Run `jawi diff page codes/[slug]` and `jawi diff page codes/index` to see differences.',
+      },
+    ],
+  },
+  {
     version: '1.0.0',
     changes: [
       {

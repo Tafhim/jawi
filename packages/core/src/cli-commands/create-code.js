@@ -4,8 +4,8 @@
  *
  * Examples:
  *   jawi create-code                         # interactive prompts
- *   jawi create-code --title "Hello" --language python --tags "python,example"
- *   jawi create-code --title "Script" --language bash --tags "script,demo" --md
+ *   jawi create-code --title "Hello" --language python --tags "python example"
+ *   jawi create-code --title "Script" --language bash --tags "script demo" --md
  */
 
 import { writeFile, mkdir } from 'fs/promises';
@@ -128,12 +128,13 @@ export async function createCode(args) {
   // ---------- Tags ----------
   // Only prompt for tags in fully interactive mode (no CLI flags provided).
   // In CLI mode (title+language provided), tags default to empty array.
+  // Tags are space-separated (consistent with create-post.js / create-thought.js).
   let codeTags = [];
   if (promptTags) {
-    codeTags = promptTags.split(',').map(t => t.trim()).filter(t => t.length > 0);
+    codeTags = promptTags.split(' ').map(t => t.trim()).filter(t => t.length > 0);
   } else if (!promptTitle && !promptLang) {
-    const tagInput = await prompt('Tags (comma-separated, e.g. python,example)', '');
-    codeTags = tagInput ? tagInput.split(',').map(t => t.trim()).filter(t => t.length > 0) : [];
+    const tagInput = await prompt('Tags (space-separated, e.g. python example)', '');
+    codeTags = tagInput ? tagInput.split(' ').map(t => t.trim()).filter(t => t.length > 0) : [];
   }
 
   const isMD = !!md;
@@ -148,6 +149,12 @@ export async function createCode(args) {
   console.log(`   Slug:     ${slug}`);
   console.log(`   File:     ${fileExt}`);
 
+  // Build tags block in YAML list format (consistent with create-post.js / create-thought.js)
+  let tagsBlock = '';
+  if (codeTags.length > 0) {
+    tagsBlock = codeTags.map(t => `  - "${t}"`).join('\n');
+  }
+
   let content;
   if (!isMD) {
     content = [
@@ -155,7 +162,8 @@ export async function createCode(args) {
       `time: ${time}`,
       `title: ${codeTitle}`,
       `language: ${lang}`,
-      ...(codeTags.length > 0 ? [`tags: [${codeTags.join(', ')}]`] : []),
+      `tags:`,
+      tagsBlock,
       '---',
       '',
       '---'    // Astro import block separator
@@ -166,7 +174,8 @@ export async function createCode(args) {
       `time: ${time}`,
       `title: ${codeTitle}`,
       `language: ${lang}`,
-      ...(codeTags.length > 0 ? [`tags: [${codeTags.join(', ')}]`] : []),
+      `tags:`,
+      tagsBlock,
       '---'
     ].join('\n');
   }

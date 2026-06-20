@@ -264,6 +264,97 @@ function migrateTime(contentDir, dryRun) {
 }
 
 // ---------------------------------------------------------------------------
+// Tag migration (strip "#" prefix from tag values)
+// ---------------------------------------------------------------------------
+
+const TAG_CONTENT_DIRS = ['posts', 'codes', 'thoughts'];
+
+/**
+ * Strip "#" prefix from tag values in frontmatter.
+ * Handles both YAML list format and inline array format.
+ * @param {string} contentDir - Root content directory from config
+ * @param {boolean} dryRun - If true, preview changes without writing
+ */
+function migrateTags(contentDir, dryRun) {
+  console.log(`\n${dryRun ? 'DRY RUN - ' : ''}Stripping "#" prefix from tag values...\n`);
+
+  let totalMigrated = 0;
+  let totalSkipped = 0;
+  let totalErrors = 0;
+
+  for (const dirName of TAG_CONTENT_DIRS) {
+    const dirPath = join(contentDir, dirName);
+
+    try {
+      const files = readdirSync(dirPath);
+      console.log(`\n[${dirName}] Processing ${files.length} files...`);
+
+      for (const file of files) {
+        if (!file.endsWith('.md') && !file.endsWith('.mdx')) {
+          continue;
+        }
+
+        const filePath = join(dirPath, file);
+        let content = readFileSync(filePath, 'utf-8');
+        let modified = false;
+
+        // Handle YAML list format: - "#tag" -> - "tag"
+        const listMatch = content.match(/(tags:\n)((?:\s+-\s+"#([^"]+)")\n?)+/);
+        if (listMatch) {
+          const oldBlock = listMatch[0];
+          const newBlock = oldBlock.replace(/"#([^"]+)"/g, '"$1"');
+          if (oldBlock !== newBlock) {
+            content = content.replace(oldBlock, newBlock);
+            modified = true;
+          }
+        }
+
+        // Handle inline array format: tags: ["#tag1", "#tag2"] -> tags: ["tag1", "tag2"]
+        const inlineMatch = content.match(/tags:\s*\["#([^"]+)"(?:\s*,\s*"#([^"]+)")*\]/);
+        if (inlineMatch) {
+          const oldInline = inlineMatch[0];
+          const newInline = oldInline.replace(/"#([^"]+)"/g, '"$1"');
+          if (oldInline !== newInline) {
+            content = content.replace(oldInline, newInline);
+            modified = true;
+          }
+        }
+
+        if (modified) {
+          if (!dryRun) {
+            writeFileSync(filePath, content, 'utf-8');
+          }
+          totalMigrated++;
+          console.log(`  ${file}: migrated`);
+        } else {
+          totalSkipped++;
+          console.log(`  ${file}: skipped (no "#" prefix found)`);
+        }
+      }
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        console.log(`\n[${dirName}] Directory not found, skipping.`);
+      } else {
+        console.error(`\n[${dirName}] ERROR - ${err.message}`);
+        totalErrors++;
+      }
+    }
+  }
+
+  console.log(`\n${'='.repeat(50)}`);
+  console.log(`Summary:`);
+  console.log(`  Migrated: ${totalMigrated}`);
+  console.log(`  Skipped:  ${totalSkipped}`);
+  console.log(`  Errors:   ${totalErrors}`);
+
+  if (dryRun) {
+    console.log(`\n(Dry run - no files were modified. Run without --dry-run to apply.)`);
+  } else {
+    console.log(`\nDone! Don't forget to rebuild: npm run build`);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // CLI entry point
 // ---------------------------------------------------------------------------
 
@@ -278,9 +369,10 @@ export async function migrate(args) {
     console.error('Migrations:');
     console.error('  slugs  — Migrate content slugs to 32-char compact UUIDs');
     console.error('  time   — Migrate date fields to time fields (UTC)');
+    console.error('  tags   — Strip "#" prefix from tag values in frontmatter');
     console.error('');
     console.error('Flags:');
-    console.error('  --dry-run  Preview changes without writing (time migration only)');
+    console.error('  --dry-run  Preview changes without writing (time/tags migration only)');
     process.exit(1);
   }
 
@@ -301,9 +393,13 @@ export async function migrate(args) {
       migrateTime(contentDir, dryRun);
       break;
 
+    case 'tags':
+      migrateTags(contentDir, dryRun);
+      break;
+
     default:
       console.error(`Unknown migration: ${migration}`);
-      console.error('Available migrations: slugs, time');
+      console.error('Available migrations: slugs, time, tags');
       process.exit(1);
   }
 }

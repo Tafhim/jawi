@@ -12,8 +12,9 @@ const { tags } = Astro.props;
   <div class="tags-bar">
     {tags.map((tag) => {
       const tagSlug = normalizeTag(tag);
+      const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
       return (
-        <a class="tags-bar-item" href={`/tags/${tagSlug}`}>{tag}</a>
+        <a class="tags-bar-item" href={`/tags/${tagSlug}`}>{displayTag}</a>
       );
     })}
   </div>

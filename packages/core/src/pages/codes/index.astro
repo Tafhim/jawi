@@ -3,6 +3,7 @@ import Layout from '@jawi/core/layouts/MainLayout';
 import { findCodes } from '@jawi/core/utils/findCodes';
 import { formatDate } from '@jawi/core/utils/formatDate';
 import { loadConfig } from '@jawi/core/config';
+import { normalizeTag } from '@jawi/core/utils/normalizeTag';
 
 const config = await loadConfig(Astro.root);
 const codes = await findCodes(config.content.dir);
@@ -21,9 +22,12 @@ const allTags = [...new Set(codes.flatMap((c) => c.tags))].sort();
         <div class="tags-filter-wrapper">
           <span class="tags-label">Tags:</span>
           <div id="tagsFilter" class="tags-filter">
-            {allTags.map((tag) => (
-              <button class="tag-filter-pill" data-tag={tag.toLowerCase()}>{tag}</button>
-            ))}
+            {allTags.map((tag) => {
+              const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+              return (
+              <button class="tag-filter-pill" data-tag={normalizeTag(tag)}>{displayTag}</button>
+            );
+          })}
           </div>
         </div>
       )}
@@ -32,7 +36,7 @@ const allTags = [...new Set(codes.flatMap((c) => c.tags))].sort();
     {codes.length > 0 ? (
       <div class="codes-grid">
         {codes.map((code) => (
-          <a href={`/codes/${code.slug}`} class="code-card bottom-right-notch" data-title={code.title.toLowerCase()} data-lang={code.language.toLowerCase()} data-file={code.filename.toLowerCase()} data-tags={code.tags.map((t) => t.toLowerCase()).join(',')} data-time={code.localTime || ''}>
+          <a href={`/codes/${code.slug}`} class="code-card bottom-right-notch" data-title={code.title.toLowerCase()} data-lang={code.language.toLowerCase()} data-file={code.filename.toLowerCase()} data-tags={code.tags.map((t) => normalizeTag(t)).join(',')} data-time={code.localTime || ''}>
             <div class="code-card-header">
               <h3 class="code-card-title">{code.title}</h3>
               <span class="code-card-lang">{code.language}</span>
@@ -42,9 +46,11 @@ const allTags = [...new Set(codes.flatMap((c) => c.tags))].sort();
             )}
             {code.tags.length > 0 && (
               <div class="code-card-tags">
-                {code.tags.map((tag) => (
-                  <span class="tag-pill">{tag}</span>
-                ))}
+                {code.tags.map((tag) => {
+                  const tagSlug = normalizeTag(tag);
+                  const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+                  return <a class="tag-pill" href={`/tags/${tagSlug}`}>{displayTag}</a>;
+                })}
               </div>
             )}
           </a>
@@ -149,7 +155,13 @@ const allTags = [...new Set(codes.flatMap((c) => c.tags))].sort();
     border-radius: 4px;
     font-size: 0.8rem;
     color: #aaa;
+    text-decoration: none;
     transition: background 0.2s, color 0.2s;
+  }
+
+  .tag-pill:hover {
+    background: #333;
+    color: #fff;
   }
 
   .codes-empty {

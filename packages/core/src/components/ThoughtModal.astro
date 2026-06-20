@@ -179,6 +179,7 @@
     if (thoughtSlug) {
       const card = document.querySelector(`.thought-card[data-slug="${thoughtSlug}"]`);
       if (card) {
+        // Card is on the page -- open modal from card data (existing behavior)
         setTimeout(() => {
           openModal({
             slug: card.dataset.slug,
@@ -190,6 +191,30 @@
             gradient: window.getComputedStyle(card).background,
           });
         }, 100);
+      } else {
+        // Card not on this page -- fetch JSON endpoint as fallback
+        fetch(`/thoughts/${thoughtSlug}.json`)
+          .then((res) => {
+            if (!res.ok) throw new Error('not found');
+            return res.json();
+          })
+          .then((data) => {
+            setTimeout(() => {
+              openModal({
+                slug: data.slug,
+                content: data.content,
+                contentHtml: data.contentHtml,
+                time: data.time,
+                displayTime: data.displayTime,
+                tags: data.tags,
+                gradient: data.gradient || undefined,
+              });
+            }, 100);
+          })
+          .catch(() => {
+            // Silently do nothing if the JSON endpoint 404s
+            // (thought was deleted, slug is wrong, etc.)
+          });
       }
     }
   });

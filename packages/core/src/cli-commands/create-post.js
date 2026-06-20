@@ -55,7 +55,7 @@ export async function createPost(args) {
 
   let tagsBlock = '';
   if (parsedTags.length > 0) {
-    tagsBlock = parsedTags.map(t => `  - "#${t}"`).join('\n');
+    tagsBlock = parsedTags.map(t => `  - "${t}"`).join('\n');
   }
 
   const content = `---

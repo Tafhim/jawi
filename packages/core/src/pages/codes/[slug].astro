@@ -3,6 +3,7 @@ import Layout from '@jawi/core/layouts/MainLayout';
 import { findCodeBySlug } from '@jawi/core/utils/findCodes';
 import { formatDate } from '@jawi/core/utils/formatDate';
 import { loadConfig } from '@jawi/core/config';
+import { normalizeTag } from '@jawi/core/utils/normalizeTag';
 import Prism from 'prismjs';
 import '@jawi/core/utils/loadPrismLanguages';
 
@@ -66,9 +67,11 @@ try {
           )}
           {code.tags.length > 0 && (
             <div class="code-detail-tags-list">
-              {code.tags.map((tag) => (
-                <span class="code-detail-tag">{tag}</span>
-              ))}
+              {code.tags.map((tag) => {
+                const tagSlug = normalizeTag(tag);
+                const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+                return <a class="code-detail-tag" href={`/tags/${tagSlug}`}>{displayTag}</a>;
+              })}
             </div>
           )}
         </div>
@@ -178,7 +181,13 @@ try {
     border-radius: 4px;
     font-size: 0.8rem;
     color: #aaa;
+    text-decoration: none;
     transition: background 0.2s, color 0.2s;
+  }
+
+  .code-detail-tag:hover {
+    background: #333;
+    color: #fff;
   }
 
   .code-detail-content {

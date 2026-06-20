@@ -30,7 +30,8 @@ const displayTime = time ? formatDate(time) : '';
         <div class="tags-compact">
           {tags.map((tag) => {
             const tagSlug = normalizeTag(tag);
-            return <a class="tag" href={`/tags/${tagSlug}`}>{tag}</a>;
+            const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
+            return <a class="tag" href={`/tags/${tagSlug}`}>{displayTag}</a>;
           })}
         </div>
       )}

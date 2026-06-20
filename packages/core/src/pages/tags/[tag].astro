@@ -67,7 +67,8 @@ const pageItems = allItems.slice(0, ITEMS_PER_PAGE);
                 <div class="inline-tags">
                   {Array.isArray(item.tags) && item.tags.map(t => {
                     const slug = normalizeTag(t);
-                    return <a class="inline-tag" href={`/tags/${slug}`}>{t}</a>;
+                    const displayTag = t.startsWith('#') ? t : `#${t}`;
+                    return <a class="inline-tag" href={`/tags/${slug}`}>{displayTag}</a>;
                   })}
                 </div>
               </td>

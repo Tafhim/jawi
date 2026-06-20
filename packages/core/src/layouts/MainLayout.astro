@@ -239,6 +239,17 @@ const dateFormatPreset = dateFormat || 'long';
 
   p { margin-bottom: 1rem; }
 
+  ul, ol {
+    padding-left: 2em;
+    margin-bottom: 1.5rem;
+  }
+
+  ul { list-style-type: disc; }
+  ol { list-style-type: decimal; }
+
+  li { margin-bottom: 0.25rem; }
+  li > ul, li > ol { margin-bottom: 0.25rem; }
+
   pre, code, kbd, samp {
     font-family: var(--font-mono);
     font-size: inherit;

@@ -1,7 +1,34 @@
 import { fileURLToPath } from 'url';
+import { readdirSync, readFileSync, writeFileSync, rmSync, existsSync } from 'fs';
+import { join } from 'path';
 import { loadConfig, defaultConfig, validateConfig } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
+
+/**
+ * Flatten .json directories into flat .json files.
+ *
+ * Astro generates .json.astro routes as directories with index.html inside
+ * (e.g., dist/thoughts/slug.json/index.html). Static hosts need flat .json
+ * files for proper content-type and URL resolution.
+ */
+function flattenJsonDirs(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (entry.name.endsWith('.json')) {
+        const indexFile = join(fullPath, 'index.html');
+        if (existsSync(indexFile)) {
+          const content = readFileSync(indexFile, 'utf-8');
+          rmSync(fullPath, { recursive: true });
+          writeFileSync(join(dir, entry.name), content);
+        }
+      } else {
+        flattenJsonDirs(fullPath);
+      }
+    }
+  }
+}
 
 /**
  * Module-level storage for the resolved Jawi config.
@@ -47,6 +74,12 @@ export default function jawi(options = {}) {
             },
           },
         });
+      },
+
+      'astro:build:done'({ dir }) {
+        // Flatten .json directories into flat .json files for proper serving
+        const distDir = dir ? dir.pathname || dir : join(process.cwd(), 'dist');
+        flattenJsonDirs(distDir);
       },
     },
   };
