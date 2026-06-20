@@ -5,9 +5,17 @@
 <div id="thought-modal-backdrop" class="modal-backdrop" aria-hidden="true">
   <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="thought-modal-title">
     <button class="modal-close" aria-label="Close modal">&times;</button>
-    <div id="thought-modal-title" class="modal-meta"></div>
-    <div id="thought-modal-content" class="modal-content"></div>
+    <div id="capture-target">
+      <div id="thought-modal-title" class="modal-meta"></div>
+      <div id="thought-modal-content" class="modal-content"></div>
+    </div>
     <div class="modal-footer">
+      <button class="modal-screenshot" aria-label="Capture screenshot">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span class="screenshot-label">Screenshot</span>
+        <span class="screenshot-saving" hidden>Saving...</span>
+        <span class="screenshot-done" hidden>Done!</span>
+      </button>
       <button class="modal-permalink" aria-label="Copy permalink">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         <span class="permalink-label">Copy permalink</span>
@@ -30,7 +38,12 @@
 
     const backdrop = document.getElementById('thought-modal-backdrop');
     const modalContainer = backdrop?.querySelector('.modal-container');
+    const captureTarget = document.getElementById('capture-target');
     const closeBtn = backdrop?.querySelector('.modal-close');
+    const screenshotBtn = backdrop?.querySelector('.modal-screenshot');
+    const screenshotLabel = screenshotBtn?.querySelector('.screenshot-label');
+    const screenshotSaving = screenshotBtn?.querySelector('.screenshot-saving');
+    const screenshotDone = screenshotBtn?.querySelector('.screenshot-done');
     const permalinkBtn = backdrop?.querySelector('.modal-permalink');
     const permalinkLabel = permalinkBtn?.querySelector('.permalink-label');
     const permalinkCopied = permalinkBtn?.querySelector('.permalink-copied');
@@ -120,6 +133,67 @@
       });
     }
 
+    async function captureScreenshot() {
+      if (!captureTarget) return;
+
+      // Button feedback
+      if (screenshotLabel) screenshotLabel.hidden = true;
+      if (screenshotSaving) screenshotSaving.hidden = false;
+      screenshotBtn.disabled = true;
+
+      try {
+        // Wait for fonts
+        if (document.fonts?.ready) await document.fonts.ready;
+        await new Promise(r => setTimeout(r, 200));
+
+        // Temporarily move gradient background to capture target
+        const gradient = modalContainer?.style.background || '';
+        if (gradient) captureTarget.style.background = gradient;
+
+        // Hide close button during capture
+        if (closeBtn) closeBtn.style.visibility = 'hidden';
+
+        // Dynamic import to avoid SSR bundling
+        const { default: html2canvas } = await import('html2canvas');
+
+        const canvas = await html2canvas(captureTarget, {
+          backgroundColor: '#1a1a1a',
+          scale: window.devicePixelRatio || 2,
+          logging: false,
+        });
+
+        // Restore
+        captureTarget.style.background = '';
+        if (closeBtn) closeBtn.style.visibility = '';
+
+        // Download via blob
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const slug = currentSlug ? `thought-${currentSlug}` : `thought-${Date.now()}`;
+          a.download = `${slug}.png`;
+          a.href = url;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          // Show "Done!" feedback
+          if (screenshotSaving) screenshotSaving.hidden = true;
+          if (screenshotDone) screenshotDone.hidden = false;
+          setTimeout(() => {
+            if (screenshotDone) screenshotDone.hidden = true;
+            if (screenshotLabel) screenshotLabel.hidden = false;
+          }, 2000);
+        }, 'image/png');
+
+      } catch (err) {
+        console.error('Screenshot failed:', err);
+        if (screenshotSaving) screenshotSaving.hidden = true;
+        if (screenshotLabel) screenshotLabel.hidden = false;
+      } finally {
+        screenshotBtn.disabled = false;
+      }
+    }
+
     // Event delegation for thought card clicks (single listener for all cards)
     document.addEventListener('click', (e) => {
       const card = e.target.closest('.thought-card');
@@ -146,6 +220,9 @@
 
     // Copy permalink
     permalinkBtn?.addEventListener('click', copyPermalink);
+
+    // Capture screenshot
+    screenshotBtn?.addEventListener('click', captureScreenshot);
 
     // Close on backdrop click (outside modal)
     backdrop?.addEventListener('click', (e) => {
@@ -351,8 +428,14 @@
   border-top: 1px solid #333;
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
+#capture-target {
+  background: inherit;
+}
+
+.modal-screenshot,
 .modal-permalink {
   display: inline-flex;
   align-items: center;
@@ -368,16 +451,29 @@
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
+.modal-screenshot:hover,
 .modal-permalink:hover {
   background: #333;
   color: #fff;
   border-color: #555;
 }
 
+.modal-screenshot:disabled,
+.modal-permalink:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.modal-screenshot svg,
 .modal-permalink svg {
   flex-shrink: 0;
 }
 
+.screenshot-saving {
+  color: #facc15;
+}
+
+.screenshot-done,
 .permalink-copied {
   color: #4ade80;
 }
