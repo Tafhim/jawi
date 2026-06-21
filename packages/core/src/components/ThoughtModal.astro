@@ -30,11 +30,22 @@
   document.addEventListener('DOMContentLoaded', async () => {
     // ── Config ─────────────────────────────────────────────────────────
 
-    // Fetch watermark text from framework config
+    // Fetch watermark config from framework config
     let watermarkText = '';
+    let watermarkStyle = 'diagonal';
     try {
       const config = await fetch('/_jawi_config.json').then(r => r.json());
-      watermarkText = config?.site?.watermark || '';
+      const wm = config?.site?.watermark;
+      if (wm) {
+        // Support both new object format and legacy string format
+        if (typeof wm === 'object') {
+          watermarkText = wm.text || '';
+          watermarkStyle = wm.style || 'diagonal';
+        } else if (typeof wm === 'string') {
+          watermarkText = wm;
+          watermarkStyle = 'diagonal';
+        }
+      }
     } catch {
       // Config not available -- watermark disabled
     }
@@ -142,7 +153,7 @@
 
     // Draw a diagonal tiled watermark directly onto the canvas.
     // Runs AFTER html2canvas capture — no DOM involvement.
-    function drawWatermark(canvas, text) {
+    function drawWatermarkDiagonal(canvas, text) {
       const ctx = canvas.getContext('2d');
       const W = canvas.width;
       const H = canvas.height;
@@ -178,6 +189,46 @@
       ctx.restore();
     }
 
+    const WATERMARK_RIGHT_SPACING = WATERMARK.spacing + 90;
+
+    // Draw a right-side vertical watermark directly onto the canvas.
+    // Text is rotated 90 degrees and repeats along the right edge of the image.
+    function drawWatermarkRight(canvas, text) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+
+      // Fully reset canvas state
+      ctx.restore();
+      ctx.restore();
+      ctx.restore();
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.clip();
+      ctx.globalCompositeOperation = 'source-over';
+
+      ctx.globalAlpha = WATERMARK.opacity;
+      ctx.fillStyle = WATERMARK.color;
+      ctx.font = `${WATERMARK.fontSize}px monospace`;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'right';
+
+      const margin = 20;
+      const x = W - margin;
+      const step = WATERMARK_RIGHT_SPACING;
+
+      for (let y = 0; y <= H; y += step) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(text, 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
     async function captureScreenshot() {
       if (!modalContainer) return;
 
@@ -207,9 +258,13 @@
         // Remove the off-screen clone
         document.body.removeChild(clone);
 
-        // Apply tiled diagonal watermark if configured
+        // Apply watermark if configured
         if (watermarkText) {
-          drawWatermark(canvas, watermarkText);
+          if (watermarkStyle === 'right') {
+            drawWatermarkRight(canvas, watermarkText);
+          } else {
+            drawWatermarkDiagonal(canvas, watermarkText);
+          }
         }
 
         // Download via blob

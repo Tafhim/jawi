@@ -16,7 +16,10 @@ export const defaultConfig = {
     title: 'Jawi',
     footer: 'Jawi',
     url: '',
-    watermark: '',
+    watermark: {
+      text: '',
+      style: 'diagonal',
+    },
   },
   content: {
     dir: './content',
@@ -105,6 +108,11 @@ function mergeConfig(defaults, userConfig) {
  * @returns {Promise<Object>} Resolved config object
  */
 /**
+ * Valid watermark styles.
+ */
+const VALID_WATERMARK_STYLES = ['diagonal', 'right'];
+
+/**
  * Validate a complete config object.
  * Throws descriptive errors on validation failure.
  * @param {Object} config - Config object to validate
@@ -113,6 +121,25 @@ function mergeConfig(defaults, userConfig) {
 export function validateConfig(config) {
   if (!config) {
     throw new Error('Config object is required');
+  }
+
+  // Validate watermark
+  if (config.site && config.site.watermark) {
+    const wm = config.site.watermark;
+    // After normalization, watermark is always an object
+    if (typeof wm === 'object' && !Array.isArray(wm)) {
+      if (typeof wm.text !== 'string') {
+        throw new Error(
+          'Invalid watermark "text". Must be a string.'
+        );
+      }
+      if (wm.style && !VALID_WATERMARK_STYLES.includes(wm.style)) {
+        throw new Error(
+          `Invalid watermark "style" "${wm.style}". ` +
+          `Must be one of: ${VALID_WATERMARK_STYLES.join(', ')}`
+        );
+      }
+    }
   }
 
   // Validate timezone
@@ -160,6 +187,22 @@ export async function loadConfig(projectRoot) {
 
   // Merge user config with defaults
   const config = mergeConfig(defaultConfig, userConfig);
+
+  // Normalize watermark: backward compat for string format
+  // Old: watermark: 'My text'  ->  New: { text: 'My text', style: 'diagonal' }
+  if (typeof config.site.watermark === 'string') {
+    config.site.watermark = {
+      text: config.site.watermark,
+      style: 'diagonal',
+    };
+  }
+  // Ensure style defaults to 'diagonal' if omitted
+  if (config.site.watermark && typeof config.site.watermark === 'object' && !config.site.watermark.style) {
+    config.site.watermark.style = 'diagonal';
+  }
+
+  // Validate
+  validateConfig(config);
 
   // Normalize timezone
   if (config.display.timezone) {
