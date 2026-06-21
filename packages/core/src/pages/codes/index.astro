@@ -49,7 +49,7 @@ const allTags = [...new Set(codes.flatMap((c) => c.tags))].sort();
                 {code.tags.map((tag) => {
                   const tagSlug = normalizeTag(tag);
                   const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
-                  return <a class="tag-pill" href={`/tags/${tagSlug}`}>{displayTag}</a>;
+                  return <span class="tag-pill">{displayTag}</span>;
                 })}
               </div>
             )}

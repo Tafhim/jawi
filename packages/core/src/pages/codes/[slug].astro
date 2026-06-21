@@ -70,7 +70,7 @@ try {
               {code.tags.map((tag) => {
                 const tagSlug = normalizeTag(tag);
                 const displayTag = tag.startsWith('#') ? tag : `#${tag}`;
-                return <a class="code-detail-tag" href={`/tags/${tagSlug}`}>{displayTag}</a>;
+                return <span class="code-detail-tag">{displayTag}</span>;
               })}
             </div>
           )}
