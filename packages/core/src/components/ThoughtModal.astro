@@ -28,22 +28,82 @@
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
-    // Inlined normalizeTag — client:load scripts cannot import from node_modules,
-    // so we duplicate the simple tag normalization logic here.
+    // ── Helpers ────────────────────────────────────────────────────────
+
     function normalizeTag(tag) {
       return tag.replace(/^#+/, '').toLowerCase();
     }
 
+    // Inject explicit bullets/numbers for html2canvas (which doesn't render native markers)
+    function injectListMarkers(clone) {
+      const basePadding = getBasePadding(clone);
+
+      clone.querySelectorAll('ul').forEach((ul) => {
+        ul.querySelectorAll(':scope > li').forEach((li) => {
+          const bullet = document.createElement('span');
+          bullet.textContent = '\u2022';
+          bullet.style.cssText = 'margin-right:0.5rem;display:inline-block;';
+          li.insertBefore(bullet, li.firstChild);
+        });
+      });
+
+      clone.querySelectorAll('ol').forEach((ol) => {
+        ol.style.listStyleType = 'none';
+        let i = 0;
+        ol.querySelectorAll(':scope > li').forEach((li) => {
+          const num = document.createElement('span');
+          num.textContent = `${++i}.`;
+          num.style.cssText = 'margin-right:0.35rem;margin-left:-28px;display:inline-block;';
+          li.insertBefore(num, li.firstChild);
+        });
+      });
+
+      // Set inline padding-left on all lists for nesting depth
+      clone.querySelectorAll('ul, ol').forEach((list) => {
+        let depth = 0;
+        let parent = list.parentElement;
+        while (parent) {
+          if (parent.tagName === 'LI') depth++;
+          parent = parent.parentElement;
+        }
+        list.style.paddingLeft = `${basePadding + depth * 3}px`;
+      });
+    }
+
+    // Read the computed padding from a real list element, fallback to 40px
+    function getBasePadding(container) {
+      const sampleList = container.querySelector('ul, ol');
+      return sampleList
+        ? parseFloat(window.getComputedStyle(sampleList).paddingLeft) || 40
+        : 40;
+    }
+
+    // Clone the modal off-screen, hide chrome, prepare list markers
+    function prepareScreenshotClone(modalContainer) {
+      const clone = modalContainer.cloneNode(true);
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.maxHeight = 'none';
+      clone.style.overflowY = 'visible';
+
+      // Hide chrome elements
+      const cloneClose = clone.querySelector('.modal-close');
+      const cloneFooter = clone.querySelector('.modal-footer');
+      if (cloneClose) cloneClose.style.display = 'none';
+      if (cloneFooter) cloneFooter.style.display = 'none';
+
+      // Inject explicit list markers for html2canvas
+      injectListMarkers(clone);
+
+      return clone;
+    }
+
+    // ── Modal Lifecycle ────────────────────────────────────────────────
+
     const backdrop = document.getElementById('thought-modal-backdrop');
     const modalContainer = backdrop?.querySelector('.modal-container');
     const closeBtn = backdrop?.querySelector('.modal-close');
-    const screenshotBtn = backdrop?.querySelector('.modal-screenshot');
-    const screenshotLabel = screenshotBtn?.querySelector('.screenshot-label');
-    const screenshotSaving = screenshotBtn?.querySelector('.screenshot-saving');
-    const screenshotDone = screenshotBtn?.querySelector('.screenshot-done');
-    const permalinkBtn = backdrop?.querySelector('.modal-permalink');
-    const permalinkLabel = permalinkBtn?.querySelector('.permalink-label');
-    const permalinkCopied = permalinkBtn?.querySelector('.permalink-copied');
     const titleEl = document.getElementById('thought-modal-title');
     const contentEl = document.getElementById('thought-modal-content');
 
@@ -68,10 +128,8 @@
       currentSlug = data.slug || '';
 
       // Apply gradient background from the card
-      if (modalContainer && data.gradient) {
-        modalContainer.style.background = data.gradient;
-      } else if (modalContainer) {
-        modalContainer.style.background = '';
+      if (modalContainer) {
+        modalContainer.style.background = data.gradient || '';
       }
 
       // Use pre-formatted display time from ThoughtCard (server-side formatDate)
@@ -117,6 +175,17 @@
       closeBtn?.focus();
     }
 
+    // ── Button Actions ─────────────────────────────────────────────────
+
+    const screenshotBtn = backdrop?.querySelector('.modal-screenshot');
+    const screenshotLabel = screenshotBtn?.querySelector('.screenshot-label');
+    const screenshotSaving = screenshotBtn?.querySelector('.screenshot-saving');
+    const screenshotDone = screenshotBtn?.querySelector('.screenshot-done');
+
+    const permalinkBtn = backdrop?.querySelector('.modal-permalink');
+    const permalinkLabel = permalinkBtn?.querySelector('.permalink-label');
+    const permalinkCopied = permalinkBtn?.querySelector('.permalink-copied');
+
     function copyPermalink() {
       if (!currentSlug) return;
       const url = `${window.location.origin}/?thought=${currentSlug}`;
@@ -143,33 +212,21 @@
         if (document.fonts?.ready) await document.fonts.ready;
         await new Promise(r => setTimeout(r, 200));
 
-        // Hide chrome elements using display:none (invisible, no visual flash)
-        if (closeBtn) closeBtn.style.display = 'none';
-        const footer = modalContainer.querySelector('.modal-footer');
-        if (footer) footer.style.display = 'none';
-
-        // Temporarily remove scroll constraints so html2canvas captures full content
-        const origMaxHeight = modalContainer.style.maxHeight;
-        const origOverflow = modalContainer.style.overflowY;
-        modalContainer.style.maxHeight = 'none';
-        modalContainer.style.overflowY = 'visible';
+        // Clone modal off-screen and prepare it
+        const clone = prepareScreenshotClone(modalContainer);
+        document.body.appendChild(clone);
 
         // Dynamic import to avoid SSR bundling
         const { default: html2canvas } = await import('html2canvas');
 
-        const canvas = await html2canvas(modalContainer, {
+        const canvas = await html2canvas(clone, {
           backgroundColor: '#1a1a1a',
           scale: window.devicePixelRatio || 2,
           logging: false,
         });
 
-        // Restore scroll constraints
-        modalContainer.style.maxHeight = origMaxHeight;
-        modalContainer.style.overflowY = origOverflow;
-
-        // Restore chrome elements
-        if (closeBtn) closeBtn.style.display = '';
-        if (footer) footer.style.display = '';
+        // Remove the off-screen clone
+        document.body.removeChild(clone);
 
         // Download via blob
         canvas.toBlob((blob) => {
@@ -199,16 +256,15 @@
       }
     }
 
-    // Event delegation for thought card clicks (single listener for all cards)
+    // ── Event Listeners ────────────────────────────────────────────────
+
+    // Thought card clicks (event delegation — single listener for all cards)
     document.addEventListener('click', (e) => {
       const card = e.target.closest('.thought-card');
       if (!card) return;
-      // Don't open modal if clicking a link (e.g. tags)
-      if (e.target.closest('a')) return;
+      if (e.target.closest('a')) return; // Don't open modal if clicking a link
 
       e.preventDefault();
-      const gradient = window.getComputedStyle(card).background;
-
       openModal({
         slug: card.dataset.slug,
         content: card.dataset.content,
@@ -216,7 +272,7 @@
         time: card.dataset.time,
         displayTime: card.dataset.displayTime,
         tags: JSON.parse(card.dataset.tags),
-        gradient: gradient,
+        gradient: window.getComputedStyle(card).background,
       });
     });
 
@@ -241,8 +297,7 @@
       }
     });
 
-    // Prevent scroll bleed-through: when modal is open and content is at scroll
-    // boundary, wheel events should NOT propagate to the background page
+    // Prevent scroll bleed-through
     if (modalContainer) {
       modalContainer.addEventListener('wheel', (e) => {
         if (!backdrop?.classList.contains('visible')) return;
@@ -255,13 +310,14 @@
       }, { passive: false });
     }
 
-    // Auto-open modal if URL has ?thought=slug
+    // ── Auto-open from URL ─────────────────────────────────────────────
+
     const params = new URLSearchParams(window.location.search);
     const thoughtSlug = params.get('thought');
     if (thoughtSlug) {
       const card = document.querySelector(`.thought-card[data-slug="${thoughtSlug}"]`);
       if (card) {
-        // Card is on the page -- open modal from card data (existing behavior)
+        // Card is on the page -- open modal from card data
         setTimeout(() => {
           openModal({
             slug: card.dataset.slug,
@@ -295,7 +351,6 @@
           })
           .catch(() => {
             // Silently do nothing if the JSON endpoint 404s
-            // (thought was deleted, slug is wrong, etc.)
           });
       }
     }
@@ -483,6 +538,7 @@
   .modal-container {
     padding: 1.5rem;
     max-height: 90vh;
+    max-width: 90vw;
   }
 }
 
