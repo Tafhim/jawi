@@ -16,6 +16,7 @@ export const defaultConfig = {
     title: 'Jawi',
     footer: 'Jawi',
     url: '',
+    watermark: '',
   },
   content: {
     dir: './content',

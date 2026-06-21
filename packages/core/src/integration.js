@@ -1,9 +1,11 @@
 import { fileURLToPath } from 'url';
-import { readdirSync, readFileSync, writeFileSync, rmSync, existsSync } from 'fs';
+import { readdirSync, readFileSync, writeFileSync, rmSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { loadConfig, defaultConfig, validateConfig } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
+
+console.log('[jawi] Integration module loaded');
 
 /**
  * Flatten .json directories into flat .json files.
@@ -50,7 +52,8 @@ export default function jawi(options = {}) {
     name: '@jawi/core',
 
     hooks: {
-      async 'configSetup'({ config, updateConfig }) {
+      async 'astro:config:setup'({ config, updateConfig }) {
+        console.log('[jawi] astro:config:setup hook called');
         // Determine the user's project root from the Astro config
         const projectRoot = config.root ? config.root.pathname || config.root : process.cwd();
 
@@ -66,19 +69,30 @@ export default function jawi(options = {}) {
         // 4. Store for getJawiConfig()
         resolvedConfig = mergedConfig;
 
-        // 5. Inject __JAWI_CONFIG__ global for build-time config access
-        updateConfig({
-          viteConfig: {
-            define: {
-              __JAWI_CONFIG__: JSON.stringify(mergedConfig),
-            },
-          },
-        });
+        // 5. Write config JSON to public dir for client-side access in dev mode
+        //    (also written to dist/ in astro:build:done for production)
+        const projectRootPath = config.root ? config.root.pathname || config.root : process.cwd();
+        const publicDir = join(projectRootPath, 'public');
+        console.log('[jawi] Writing config to:', publicDir);
+        if (!existsSync(publicDir)) {
+          mkdirSync(publicDir, { recursive: true });
+        }
+        writeFileSync(join(publicDir, '_jawi_config.json'), JSON.stringify(mergedConfig), 'utf-8');
+        console.log('[jawi] Config written successfully');
       },
 
-      'astro:build:done'({ dir }) {
-        // Flatten .json directories into flat .json files for proper serving
+      async 'astro:build:done'({ dir }) {
+        // Write config JSON for client-side access
         const distDir = dir ? dir.pathname || dir : join(process.cwd(), 'dist');
+        // Load config directly (integration instance may differ from configSetup)
+        const config = resolvedConfig || await loadConfig(process.cwd());
+        writeFileSync(
+          join(distDir, '_jawi_config.json'),
+          JSON.stringify(config),
+          'utf-8',
+        );
+
+        // Flatten .json directories into flat .json files for proper serving
         flattenJsonDirs(distDir);
       },
     },

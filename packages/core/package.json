@@ -18,11 +18,16 @@
     "jawi": "./src/cli.js"
   },
   "dependencies": {
-    "astro": "^6.3.8",
     "@astrojs/mdx": "^5.0.6",
+    "astro": "^6.3.8",
+    "html2canvas": "^1.4.1",
     "marked": "^18.0.2",
-    "prismjs": "^1.30.0",
-    "parse5": "^7.0.0"
+    "parse5": "^7.0.0",
+    "prismjs": "^1.30.0"
   },
-  "files": ["src/", "README.md", "CHANGELOG.md"]
+  "files": [
+    "src/",
+    "README.md",
+    "CHANGELOG.md"
+  ]
 }

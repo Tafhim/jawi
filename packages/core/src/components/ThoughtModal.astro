@@ -8,6 +8,12 @@
     <div id="thought-modal-title" class="modal-meta"></div>
     <div id="thought-modal-content" class="modal-content"></div>
     <div class="modal-footer">
+      <button class="modal-screenshot" aria-label="Capture screenshot">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <span class="screenshot-label">Screenshot</span>
+        <span class="screenshot-saving" hidden>Saving...</span>
+        <span class="screenshot-done" hidden>Done!</span>
+      </button>
       <button class="modal-permalink" aria-label="Copy permalink">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
         <span class="permalink-label">Copy permalink</span>
@@ -21,23 +27,220 @@
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    // Inlined normalizeTag — client:load scripts cannot import from node_modules,
-    // so we duplicate the simple tag normalization logic here.
-    function normalizeTag(tag) {
-      return tag.replace(/^#+/, '').toLowerCase();
+  document.addEventListener('DOMContentLoaded', async () => {
+    // ── Config ─────────────────────────────────────────────────────────
+
+    // Fetch watermark text from framework config
+    let watermarkText = '';
+    try {
+      const config = await fetch('/_jawi_config.json').then(r => r.json());
+      watermarkText = config?.site?.watermark || '';
+    } catch {
+      // Config not available -- watermark disabled
     }
+
+    // Watermark rendering parameters — tweak to adjust the tiled diagonal pattern
+    const WATERMARK = {
+      fontSize: 14,
+      spacing: 120,
+      angle: -30 * Math.PI / 180,
+      opacity: 0.15,
+      color: '#fff',
+    };
+
+    // ── DOM References ─────────────────────────────────────────────────
 
     const backdrop = document.getElementById('thought-modal-backdrop');
     const modalContainer = backdrop?.querySelector('.modal-container');
     const closeBtn = backdrop?.querySelector('.modal-close');
-    const permalinkBtn = backdrop?.querySelector('.modal-permalink');
-    const permalinkLabel = permalinkBtn?.querySelector('.permalink-label');
-    const permalinkCopied = permalinkBtn?.querySelector('.permalink-copied');
     const titleEl = document.getElementById('thought-modal-title');
     const contentEl = document.getElementById('thought-modal-content');
 
+    const screenshotBtn = backdrop?.querySelector('.modal-screenshot');
+    const screenshotLabel = screenshotBtn?.querySelector('.screenshot-label');
+    const screenshotSaving = screenshotBtn?.querySelector('.screenshot-saving');
+    const screenshotDone = screenshotBtn?.querySelector('.screenshot-done');
+
+    const permalinkBtn = backdrop?.querySelector('.modal-permalink');
+    const permalinkLabel = permalinkBtn?.querySelector('.permalink-label');
+    const permalinkCopied = permalinkBtn?.querySelector('.permalink-copied');
+
     let currentSlug = '';
+
+    // ── Helpers ────────────────────────────────────────────────────────
+
+    function normalizeTag(tag) {
+      return tag.replace(/^#+/, '').toLowerCase();
+    }
+
+    // Read computed padding from a real list element, fallback to 40px
+    function getBasePadding(container) {
+      const sampleList = container.querySelector('ul, ol');
+      return sampleList
+        ? parseFloat(window.getComputedStyle(sampleList).paddingLeft) || 40
+        : 40;
+    }
+
+    // Inject explicit bullets/numbers for html2canvas (which doesn't render native markers)
+    function injectListMarkers(clone) {
+      const basePadding = getBasePadding(clone);
+
+      clone.querySelectorAll('ul').forEach((ul) => {
+        ul.querySelectorAll(':scope > li').forEach((li) => {
+          const bullet = document.createElement('span');
+          bullet.textContent = '\u2022';
+          bullet.style.cssText = 'margin-right:0.5rem;display:inline-block;';
+          li.insertBefore(bullet, li.firstChild);
+        });
+      });
+
+      clone.querySelectorAll('ol').forEach((ol) => {
+        ol.style.listStyleType = 'none';
+        let i = 0;
+        ol.querySelectorAll(':scope > li').forEach((li) => {
+          const num = document.createElement('span');
+          num.textContent = `${++i}.`;
+          num.style.cssText = 'margin-right:0.35rem;margin-left:-28px;display:inline-block;';
+          li.insertBefore(num, li.firstChild);
+        });
+      });
+
+      // Set inline padding-left on all lists for nesting depth
+      clone.querySelectorAll('ul, ol').forEach((list) => {
+        let depth = 0;
+        let parent = list.parentElement;
+        while (parent) {
+          if (parent.tagName === 'LI') depth++;
+          parent = parent.parentElement;
+        }
+        list.style.paddingLeft = `${basePadding + depth * 3}px`;
+      });
+    }
+
+    // ── Screenshot ─────────────────────────────────────────────────────
+
+    // Clone the modal off-screen, hide chrome, prepare list markers
+    function prepareScreenshotClone(modalContainer) {
+      const clone = modalContainer.cloneNode(true);
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.maxHeight = 'none';
+      clone.style.overflowY = 'visible';
+
+      // Hide chrome elements
+      const cloneClose = clone.querySelector('.modal-close');
+      const cloneFooter = clone.querySelector('.modal-footer');
+      if (cloneClose) cloneClose.style.display = 'none';
+      if (cloneFooter) cloneFooter.style.display = 'none';
+
+      // Inject explicit list markers for html2canvas
+      injectListMarkers(clone);
+
+      return clone;
+    }
+
+    // Draw a diagonal tiled watermark directly onto the canvas.
+    // Runs AFTER html2canvas capture — no DOM involvement.
+    function drawWatermark(canvas, text) {
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width;
+      const H = canvas.height;
+
+      // Fully reset canvas state — html2canvas may leave clipping paths,
+      // transforms, or composite operations that block drawing.
+      ctx.restore();
+      ctx.restore();
+      ctx.restore();
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.clip();
+      ctx.globalCompositeOperation = 'source-over';
+
+      ctx.globalAlpha = WATERMARK.opacity;
+      ctx.fillStyle = WATERMARK.color;
+      ctx.font = `${WATERMARK.fontSize}px monospace`;
+      ctx.textBaseline = 'middle';
+
+      const tw = ctx.measureText(text).width;
+      const diag = Math.sqrt(W * W + H * H);
+
+      ctx.translate(W / 2, H / 2);
+      ctx.rotate(WATERMARK.angle);
+
+      for (let y = -diag; y <= diag; y += WATERMARK.spacing) {
+        for (let x = -diag; x <= diag; x += tw + WATERMARK.spacing) {
+          ctx.fillText(text, x, y);
+        }
+      }
+      ctx.restore();
+    }
+
+    async function captureScreenshot() {
+      if (!modalContainer) return;
+
+      // Button feedback
+      if (screenshotLabel) screenshotLabel.hidden = true;
+      if (screenshotSaving) screenshotSaving.hidden = false;
+      screenshotBtn.disabled = true;
+
+      try {
+        // Wait for fonts
+        if (document.fonts?.ready) await document.fonts.ready;
+        await new Promise(r => setTimeout(r, 200));
+
+        // Clone modal off-screen and prepare it
+        const clone = prepareScreenshotClone(modalContainer);
+        document.body.appendChild(clone);
+
+        // Dynamic import to avoid SSR bundling
+        const { default: html2canvas } = await import('html2canvas');
+
+        const canvas = await html2canvas(clone, {
+          backgroundColor: '#1a1a1a',
+          scale: window.devicePixelRatio || 2,
+          logging: false,
+        });
+
+        // Remove the off-screen clone
+        document.body.removeChild(clone);
+
+        // Apply tiled diagonal watermark if configured
+        if (watermarkText) {
+          drawWatermark(canvas, watermarkText);
+        }
+
+        // Download via blob
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          const slug = currentSlug ? `thought-${currentSlug}` : `thought-${Date.now()}`;
+          a.download = `${slug}.png`;
+          a.href = url;
+          a.click();
+          URL.revokeObjectURL(url);
+
+          // Show "Done!" feedback
+          if (screenshotSaving) screenshotSaving.hidden = true;
+          if (screenshotDone) screenshotDone.hidden = false;
+          setTimeout(() => {
+            if (screenshotDone) screenshotDone.hidden = true;
+            if (screenshotLabel) screenshotLabel.hidden = false;
+          }, 2000);
+        }, 'image/png');
+
+      } catch (err) {
+        console.error('Screenshot failed:', err);
+        if (screenshotSaving) screenshotSaving.hidden = true;
+        if (screenshotLabel) screenshotLabel.hidden = false;
+      } finally {
+        screenshotBtn.disabled = false;
+      }
+    }
+
+    // ── Modal Lifecycle ────────────────────────────────────────────────
 
     function closeModal() {
       if (!backdrop) return;
@@ -58,10 +261,8 @@
       currentSlug = data.slug || '';
 
       // Apply gradient background from the card
-      if (modalContainer && data.gradient) {
-        modalContainer.style.background = data.gradient;
-      } else if (modalContainer) {
-        modalContainer.style.background = '';
+      if (modalContainer) {
+        modalContainer.style.background = data.gradient || '';
       }
 
       // Use pre-formatted display time from ThoughtCard (server-side formatDate)
@@ -107,6 +308,8 @@
       closeBtn?.focus();
     }
 
+    // ── Button Actions ─────────────────────────────────────────────────
+
     function copyPermalink() {
       if (!currentSlug) return;
       const url = `${window.location.origin}/?thought=${currentSlug}`;
@@ -120,16 +323,15 @@
       });
     }
 
-    // Event delegation for thought card clicks (single listener for all cards)
+    // ── Event Listeners ────────────────────────────────────────────────
+
+    // Thought card clicks (event delegation — single listener for all cards)
     document.addEventListener('click', (e) => {
       const card = e.target.closest('.thought-card');
       if (!card) return;
-      // Don't open modal if clicking a link (e.g. tags)
-      if (e.target.closest('a')) return;
+      if (e.target.closest('a')) return; // Don't open modal if clicking a link
 
       e.preventDefault();
-      const gradient = window.getComputedStyle(card).background;
-
       openModal({
         slug: card.dataset.slug,
         content: card.dataset.content,
@@ -137,7 +339,7 @@
         time: card.dataset.time,
         displayTime: card.dataset.displayTime,
         tags: JSON.parse(card.dataset.tags),
-        gradient: gradient,
+        gradient: window.getComputedStyle(card).background,
       });
     });
 
@@ -146,6 +348,9 @@
 
     // Copy permalink
     permalinkBtn?.addEventListener('click', copyPermalink);
+
+    // Capture screenshot
+    screenshotBtn?.addEventListener('click', captureScreenshot);
 
     // Close on backdrop click (outside modal)
     backdrop?.addEventListener('click', (e) => {
@@ -159,8 +364,7 @@
       }
     });
 
-    // Prevent scroll bleed-through: when modal is open and content is at scroll
-    // boundary, wheel events should NOT propagate to the background page
+    // Prevent scroll bleed-through
     if (modalContainer) {
       modalContainer.addEventListener('wheel', (e) => {
         if (!backdrop?.classList.contains('visible')) return;
@@ -173,13 +377,14 @@
       }, { passive: false });
     }
 
-    // Auto-open modal if URL has ?thought=slug
+    // ── Auto-open from URL ─────────────────────────────────────────────
+
     const params = new URLSearchParams(window.location.search);
     const thoughtSlug = params.get('thought');
     if (thoughtSlug) {
       const card = document.querySelector(`.thought-card[data-slug="${thoughtSlug}"]`);
       if (card) {
-        // Card is on the page -- open modal from card data (existing behavior)
+        // Card is on the page -- open modal from card data
         setTimeout(() => {
           openModal({
             slug: card.dataset.slug,
@@ -213,7 +418,6 @@
           })
           .catch(() => {
             // Silently do nothing if the JSON endpoint 404s
-            // (thought was deleted, slug is wrong, etc.)
           });
       }
     }
@@ -351,8 +555,10 @@
   border-top: 1px solid #333;
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
 }
 
+.modal-screenshot,
 .modal-permalink {
   display: inline-flex;
   align-items: center;
@@ -368,16 +574,29 @@
   transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 
+.modal-screenshot:hover,
 .modal-permalink:hover {
   background: #333;
   color: #fff;
   border-color: #555;
 }
 
+.modal-screenshot:disabled,
+.modal-permalink:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.modal-screenshot svg,
 .modal-permalink svg {
   flex-shrink: 0;
 }
 
+.screenshot-saving {
+  color: #facc15;
+}
+
+.screenshot-done,
 .permalink-copied {
   color: #4ade80;
 }
@@ -386,6 +605,7 @@
   .modal-container {
     padding: 1.5rem;
     max-height: 90vh;
+    max-width: 90vw;
   }
 }
 
