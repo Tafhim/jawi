@@ -8,6 +8,7 @@ import { join } from 'path';
 import { generateSlug } from './generateSlug.js';
 import { parseUTC, toLocalTime } from './timezone.js';
 import { parseFrontmatter } from './parseFrontmatter.js';
+import { includeDrafts, isDraft } from './drafts.js';
 
 export async function findCodes(baseDir = './content') {
   const codesDir = join(baseDir, 'codes');
@@ -19,7 +20,7 @@ export async function findCodes(baseDir = './content') {
     const content = readFileSync(filepath, 'utf8');
 
     let parsed;
-    let codeBody, language, title, tags, utcTime;
+    let codeBody, language, title, tags, utcTime, draft;
 
     if (file.endsWith('.mdx')) {
       const { frontmatter } = parseFrontmatter(content);
@@ -29,6 +30,7 @@ export async function findCodes(baseDir = './content') {
       title = frontmatter.title || generateSlug(file);
       tags = Array.isArray(frontmatter.tags) ? frontmatter.tags : [];
       utcTime = frontmatter.time || null;
+      draft = isDraft(frontmatter);
     } else if (file.endsWith('.md')) {
       const { frontmatter, body } = parseFrontmatter(content);
       codeBody = body || '';
@@ -36,7 +38,13 @@ export async function findCodes(baseDir = './content') {
       title = frontmatter.title;
       tags = frontmatter.tags || [];
       utcTime = frontmatter.time || null;
+      draft = isDraft(frontmatter);
     } else {
+      continue;
+    }
+
+    // Skip drafts unless the build explicitly includes them
+    if (draft && !includeDrafts()) {
       continue;
     }
 
@@ -48,7 +56,8 @@ export async function findCodes(baseDir = './content') {
       language,
       tags,
       time: utcTime,
-      localTime: utcTime ? toLocalTime(utcTime) : ''
+      localTime: utcTime ? toLocalTime(utcTime) : '',
+      draft,
     });
   }
 
@@ -116,6 +125,11 @@ export async function findCodeBySlug(slug, baseDir = './content') {
     if (fileSlug === slug || file.replace(/\.(md|mdx)$/, '') === slug) {
       const { frontmatter, body } = parseFrontmatter(content);
 
+      // Don't expose drafts unless the build explicitly includes them
+      if (!includeDrafts() && isDraft(frontmatter)) {
+        return null;
+      }
+
       let codeBody, language;
       if (file.endsWith('.mdx')) {
         codeBody = extractMdxCode(content);
@@ -133,7 +147,8 @@ export async function findCodeBySlug(slug, baseDir = './content') {
         language,
         tags: frontmatter.tags || [],
         time: frontmatter.time || null,
-        localTime: frontmatter.time ? toLocalTime(frontmatter.time) : ''
+        localTime: frontmatter.time ? toLocalTime(frontmatter.time) : '',
+        draft: isDraft(frontmatter)
       };
     }
   }

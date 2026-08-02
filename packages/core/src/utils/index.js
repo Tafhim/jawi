@@ -12,6 +12,9 @@ export { parseFrontmatter } from './parseFrontmatter.js';
 export { parseMarkdown } from './parseMarkdown.js';
 export { convertEmojis, EMOJI_MAP } from './emoji.js';
 
+// Drafts
+export { includeDrafts, isDraft } from './drafts.js';
+
 // Content finders
 export { findPosts, findPostBySlug, getPostsByTag, getUniqueTags } from './findPosts.js';
 export { findThoughts, findThoughtBySlug, getThoughtsByTag, getUniqueThoughtTags } from './findThoughts.js';

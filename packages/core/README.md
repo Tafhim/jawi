@@ -289,10 +289,11 @@ Framework pages are available in `@jawi/core/pages/*`. Override them by copying 
 | `posts/[slug].astro` | `/posts/[slug]` | Post detail |
 | `codes/index.astro` | `/codes` | Code snippets listing |
 | `codes/[slug].astro` | `/codes/[slug]` | Code detail |
-| `thoughts/index.astro` | `/thoughts` | Thoughts listing |
-| `tags/index.astro` | `/tags` | Tag cloud |
-| `tags/[tag].astro` | `/tags/[tag]` | Tag detail |
-| `tags/[tag]/page/[page].astro` | `/tags/[tag]/page/[N]` | Paginated tag detail |
+|| `thoughts/index.astro` | `/thoughts` | Thoughts listing |
+|| `thoughts/page/[page].astro` | `/thoughts/page/[N]` | Paginated thoughts |
+|| `tags/index.astro` | `/tags` | Tag cloud |
+|| `tags/[tag].astro` | `/tags/[tag]` | Tag detail |
+|| `tags/[tag]/page/[page].astro` | `/tags/[tag]/page/[N]` | Paginated tag detail |
 
 ## CLI Commands
 
@@ -306,6 +307,7 @@ npx jawi create-code                       # Create a code snippet (interactive)
 npx jawi create-code --title "X" --language python --tags "python"
 npx jawi create-thought "tag1 tag2"        # Create a new thought
 npx jawi create-thought --color solid-blue "tag1"
+npx jawi add-image ~/Pictures/sample.jpg   # Copy an image into public/images/YYYY-MM/
 ```
 
 ### Override Cascade
@@ -479,6 +481,7 @@ content/
 ---
 time: 2026-05-24 00:00:00
 slug: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+draft: false
 title: My Post Title
 tags:
   - "coding"
@@ -493,6 +496,7 @@ images:
 ```yaml
 ---
 time: 2026-05-24 00:00:00
+draft: false
 title: Hello World
 language: python
 tags:
@@ -507,11 +511,60 @@ tags:
 ---
 time: 2026-05-24 00:00:00
 slug: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
+draft: false
 color: solid-blue
 tags:
   - "random"
 ---
 ```
+
+### Drafts
+
+Any content file can be marked as a draft by setting `draft: true` in its frontmatter:
+
+```yaml
+---
+draft: true
+title: Work in progress
+---
+```
+
+Drafts are **excluded from the build by default** — they don't appear on listing pages, tag pages, or the homepage, and no detail page is generated for them. To include drafts in a build, set the `JAWI_INCLUDE_DRAFTS` environment variable to a truthy value (`1`, `true`, `yes`, or `on`):
+
+```bash
+JAWI_INCLUDE_DRAFTS=true npm run build
+```
+
+The same variable works with the dev server if you want to preview drafts locally. Items without a `draft` field are always published (backward compatible). The `jawi create-post`, `jawi create-thought`, and `jawi create-code` commands write `draft: false` by default — flip it to `true` while a piece is unfinished.
+
+### Link Previews (MDX only)
+
+Embed rich link previews in your content using the `<Link>` component. Requires `.mdx` files (not plain `.md`). At build time, the framework fetches Open Graph metadata from the target URL and renders a collapsible preview card with title, description, image/video, and a copyable URL bar.
+
+```mdx
+{<Link url="https://example.com/article" />}
+```
+
+**Examples of different preview types:**
+
+```mdx
+<!-- 1. Standard link with OG image -->
+{<Link url="https://news.ycombinator.com/item?id=39123456" />}
+
+<!-- 2. Link with custom text (shown as fallback if OG fetch fails) -->
+{<Link url="https://github.com/vercel/ai" text="Vercel AI SDK" />}
+
+<!-- 3. Link with OG video (og:video meta tag) -->
+{<Link url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />}
+
+<!-- 4. Link with no OG data (renders as plain URL card) -->
+{<Link url="https://example.com/page-without-meta-tags" />}
+
+<!-- 5. Link with favicon fallback (site has OG title but no image) -->
+{<Link url="https://news.ycombinator.com" />}
+```
+
+OG data is cached in `.cache/` for 7 days between builds. Images are validated via HEAD requests before rendering. If an OG image is inaccessible, the preview falls back to the site's favicon.
 
 ## Emoji Support
 

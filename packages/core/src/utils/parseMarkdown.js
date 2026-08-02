@@ -22,6 +22,7 @@ import { parse } from 'parse5';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 import { join } from 'path';
+import { createHash } from 'crypto';
 import { parseFrontmatter } from './parseFrontmatter.js';
 import { findCodeBySlug } from './findCodes.js';
 import { convertEmojis } from './emoji.js';
@@ -44,7 +45,7 @@ async function readCachedOG(url, config) {
     const cacheDir = getCacheDir(config);
     if (!existsSync(cacheDir)) return null;
 
-    const filename = Buffer.from(url).toString('base64url');
+    const filename = createHash('sha256').update(url).digest('hex');
     const cacheFile = join(cacheDir, `${filename}.json`);
 
     if (!existsSync(cacheFile)) return null;
@@ -70,7 +71,7 @@ async function writeCachedOG(url, meta, config) {
     const cacheDir = getCacheDir(config);
     await mkdir(cacheDir, { recursive: true });
 
-    const filename = Buffer.from(url).toString('base64url');
+    const filename = createHash('sha256').update(url).digest('hex');
     const cacheFile = join(cacheDir, `${filename}.json`);
     await writeFile(cacheFile, JSON.stringify({ ts: Date.now(), meta }));
   } catch (e) {

@@ -24,6 +24,7 @@ export const defaultConfig = {
   content: {
     dir: './content',
     postsPerPage: 9,
+    thoughtsPerPage: 9,
     tagsPerPage: 50,
   },
   display: {

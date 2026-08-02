@@ -8,6 +8,7 @@
  *   create-post "tags"          Create a new blog post
  *   create-code                 Create a new code snippet
  *   create-thought "tags"       Create a new thought
+ *   add-image <path>            Copy an image into public/images/YYYY-MM/
  *   copy <type> <name>          Copy a framework file to your project
  *   diff <type> <name>          Diff your override against framework default
  *   changelog                   Show changelog
@@ -53,6 +54,8 @@ function main() {
       return import('./cli-commands/create-code.js').then(m => m.createCode(commandArgs));
     case 'create-thought':
       return import('./cli-commands/create-thought.js').then(m => m.createThought(commandArgs));
+    case 'add-image':
+      return import('./cli-commands/add-image.js').then(m => m.addImage(commandArgs));
     case 'copy':
       return import('./cli-commands/copy.js').then(m => m.copy(commandArgs));
     case 'diff':

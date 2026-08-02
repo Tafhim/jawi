@@ -11,6 +11,8 @@ import { parseMarkdown } from './parseMarkdown.js';
 import { generateSlug } from './generateSlug.js';
 import { parseUTC, toLocalTime } from './timezone.js';
 import { normalizeTag } from './normalizeTag.js';
+import { parseFrontmatter } from './parseFrontmatter.js';
+import { includeDrafts, isDraft } from './drafts.js';
 
 /**
  * Helper to check if a file is MD( or MDX)
@@ -36,7 +38,8 @@ async function readPostFile(filePath, filename, config) {
     time: utcTime,
     localTime: utcTime ? toLocalTime(utcTime) : '',
     tags: parsed.frontmatter.tags,
-    images: parsed.frontmatter.images || []
+    images: parsed.frontmatter.images || [],
+    draft: isDraft(parsed.frontmatter),
   };
 }
 
@@ -50,6 +53,10 @@ export async function findPosts(baseDir = './content') {
       const filepath = join(postsDir, file);
       if (existsSync(filepath)) {
         const post = await readPostFile(filepath, file, { baseDir });
+        // Skip drafts unless the build explicitly includes them
+        if (post.draft && !includeDrafts()) {
+          continue;
+        }
         // Validate required fields
         if (!post.title) {
           throw new Error(`Post "${post.filename}" is missing a required "title" in frontmatter.\n   Add a title field: title: "My Post Title"`);
@@ -87,6 +94,10 @@ export async function findPostBySlug(slug, baseDir = './content') {
       const slugFromFile = generateSlug(file);
 
       if (slugFromFile === slug || file.replace(/\.(md|mdx)$/, '') === slug) {
+        // Don't expose drafts unless the build explicitly includes them
+        if (!includeDrafts() && isDraft(parseFrontmatter(content).frontmatter)) {
+          return null;
+        }
         return { filename: file, content };
       }
     }

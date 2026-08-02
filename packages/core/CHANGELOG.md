@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Draft support** — content with `draft: true` in frontmatter is excluded from builds by default; set `JAWI_INCLUDE_DRAFTS=true` to include it. `create-post`, `create-thought`, and `create-code` now write `draft: false` by default.
 - `jawi migrate slugs` — idempotent slug migration to 32-char UUIDs
 - `jawi migrate time` — date-to-time migration with `--dry-run` support
 - `jawi changelog` — display changelog with `--json` and `--unreleased` flags

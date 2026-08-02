@@ -160,6 +160,7 @@ export async function createCode(args) {
     content = [
       '---',
       `time: ${time}`,
+      `draft: false`,
       `title: ${codeTitle}`,
       `language: ${lang}`,
       `tags:`,
@@ -172,6 +173,7 @@ export async function createCode(args) {
     content = [
       '---',
       `time: ${time}`,
+      `draft: false`,
       `title: ${codeTitle}`,
       `language: ${lang}`,
       `tags:`,

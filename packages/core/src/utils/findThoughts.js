@@ -10,6 +10,8 @@ import { generateSlug } from './generateSlug.js';
 import { findCodes } from './findCodes.js';
 import { parseUTC, toLocalTime } from './timezone.js';
 import { normalizeTag } from './normalizeTag.js';
+import { parseFrontmatter } from './parseFrontmatter.js';
+import { includeDrafts, isDraft } from './drafts.js';
 
 function isThoughtFile(filename) {
   return filename.endsWith('.md') || filename.endsWith('.mdx');
@@ -27,6 +29,7 @@ async function readThoughtFile(filePath, filename, codes, config) {
     localTime: utcTime ? toLocalTime(utcTime) : '',
     tags: parsed.frontmatter.tags,
     color: parsed.frontmatter.color,
+    draft: isDraft(parsed.frontmatter),
   };
 }
 
@@ -43,6 +46,10 @@ export async function findThoughts(baseDir = './content') {
       const filepath = join(thoughtsDir, file);
       if (existsSync(filepath)) {
         const thought = await readThoughtFile(filepath, file, codes, { baseDir });
+        // Skip drafts unless the build explicitly includes them
+        if (thought.draft && !includeDrafts()) {
+          continue;
+        }
         thoughts.push({
           ...thought,
           slug: generateSlug(file),
@@ -71,6 +78,10 @@ export async function findThoughtBySlug(slug, baseDir = './content') {
         const filepath = join(thoughtsDir, file);
         const codes = await findCodes(baseDir);
         const thought = await readThoughtFile(filepath, file, codes, { baseDir });
+        // Don't expose drafts unless the build explicitly includes them
+        if (thought.draft && !includeDrafts()) {
+          return null;
+        }
         return {
           ...thought,
           slug: fileSlug,

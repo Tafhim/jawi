@@ -3,23 +3,30 @@ import Layout from '@jawi/core/layouts/MainLayout';
 import ThoughtCard from '@jawi/core/components/ThoughtCard';
 import ThoughtModal from '@jawi/core/components/ThoughtModal';
 import { findThoughts } from '@jawi/core/utils/findThoughts';
-import { paginate } from '@jawi/core/utils/paginate';
+import { paginate, generatePaginationPaths } from '@jawi/core/utils/paginate';
 import { loadConfig } from '@jawi/core/config';
 
 const config = await loadConfig(Astro.root);
-const allThoughts = await findThoughts(config.content.dir);
 
-const { items: pageThoughts, totalPages, currentPage, hasPrevious, hasNext } = paginate(allThoughts, 1, config.content.thoughtsPerPage);
+export async function getStaticPaths() {
+  const config = await loadConfig(Astro.root);
+  const allThoughts = await findThoughts(config.content.dir);
+  return generatePaginationPaths(allThoughts, config.content.thoughtsPerPage);
+}
+
+const allThoughts = await findThoughts(config.content.dir);
+const currentPage = parseInt(Astro.params.page || '1');
+const { items: pageThoughts, totalPages, hasPrevious, hasNext } = paginate(allThoughts, currentPage, config.content.thoughtsPerPage);
 ---
 
 <Layout siteTitle={config.site.title} footerText={config.site.footer} dateFormat={config.display.dateFormat}>
   <div class="thoughts-page">
-    <h1>Thoughts</h1>
+    <h1>Thoughts (Page {currentPage})</h1>
     <p class="subtitle">Short-form notes and quick ideas</p>
 
     <div class="feed">
       {pageThoughts.length === 0 ? (
-        <p class="empty-message">No thoughts yet.</p>
+        <p class="empty-message">No thoughts on this page.</p>
       ) : (
         pageThoughts.map((thought) => (
           <ThoughtCard
@@ -37,16 +44,31 @@ const { items: pageThoughts, totalPages, currentPage, hasPrevious, hasNext } = p
 
     {totalPages > 1 && (
       <nav class="pagination" aria-label="Thought pagination">
-        <a
-          class="pagination-link bottom-right-notch"
-          href="#"
-          style="visibility: hidden; pointer-events: none;"
-        >Previous</a>
+        {hasPrevious ? (
+          <a
+            class="pagination-link bottom-right-notch"
+            href={currentPage === 2 ? '/thoughts' : `/thoughts/page/${currentPage - 1}`}
+          >Previous</a>
+        ) : (
+          <a
+            class="pagination-link bottom-right-notch"
+            href="#"
+            style="visibility: hidden; pointer-events: none;"
+          >Previous</a>
+        )}
         <span class="pagination-info">Page {currentPage} of {totalPages}</span>
-        <a
-          class="pagination-link bottom-right-notch"
-          href={`/thoughts/page/${currentPage + 1}`}
-        >Next</a>
+        {hasNext ? (
+          <a
+            class="pagination-link bottom-right-notch"
+            href={`/thoughts/page/${currentPage + 1}`}
+          >Next</a>
+        ) : (
+          <a
+            class="pagination-link bottom-right-notch"
+            href="#"
+            style="visibility: hidden; pointer-events: none;"
+          >Next</a>
+        )}
       </nav>
     )}
   </div>

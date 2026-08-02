@@ -22,6 +22,12 @@ COMMANDS
                               Supports --color flag.
                               Example: jawi create-thought --color solid-blue "random"
 
+  add-image <path>            Copy an image into the site's public/images/
+                              Images go into a YYYY-MM subfolder for the
+                              current month (created if missing).
+                              Example: jawi add-image ~/Pictures/sample.jpg
+                              Use --force to overwrite existing files.
+
   copy <type> <name>          Copy a framework file to your project
                               Types: page, component, layout
                               Example: jawi copy page index

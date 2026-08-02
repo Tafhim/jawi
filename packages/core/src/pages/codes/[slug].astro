@@ -1,6 +1,6 @@
 ---
 import Layout from '@jawi/core/layouts/MainLayout';
-import { findCodeBySlug } from '@jawi/core/utils/findCodes';
+import { findCodes, findCodeBySlug } from '@jawi/core/utils/findCodes';
 import { formatDate } from '@jawi/core/utils/formatDate';
 import { loadConfig } from '@jawi/core/config';
 import { normalizeTag } from '@jawi/core/utils/normalizeTag';
@@ -12,22 +12,9 @@ const config = await loadConfig(Astro.root);
 // Dynamically generate static paths from all code files
 export async function getStaticPaths() {
   const config = await loadConfig(Astro.root);
-  const fs = await import('fs');
-  const path = await import('path');
-  const userConfig = {};
-  try {
-    const configModule = await import(`${process.cwd()}/jawi.config.mjs`);
-    Object.assign(userConfig, configModule.default || {});
-  } catch {
-    // Use default content dir
-  }
-  const contentDir = userConfig.content?.dir || './content';
-  const codesDir = path.default.join(contentDir, 'codes');
-  const files = fs.default.readdirSync(codesDir);
-  return files.map(file => ({
-    params: {
-      slug: file.endsWith('.mdx') ? file.replace('.mdx', '') : file.replace('.md', '')
-    }
+  const codes = await findCodes(config.content.dir);
+  return codes.map(code => ({
+    params: { slug: code.slug }
   }));
 }
 

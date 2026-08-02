@@ -32,8 +32,9 @@ export function paginate(items, page, perPage = POSTS_PER_PAGE) {
  * @param {number} [perPage=POSTS_PER_PAGE] - Items per page
  * @returns {{ params: { page: string } }[]}
  */
-export function generatePaginationPaths(items, perPage = POSTS_PER_PAGE) {
-  const totalPages = items.length > 0 ? Math.ceil(items.length / perPage) : 0;
+export function generatePaginationPaths(items, perPage) {
+  const effectivePerPage = perPage || POSTS_PER_PAGE;
+  const totalPages = items.length > 0 ? Math.ceil(items.length / effectivePerPage) : 0;
   return Array.from({ length: totalPages }, (_, i) => ({
     params: { page: String(i + 1) },
   }));

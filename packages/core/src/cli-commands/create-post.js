@@ -61,6 +61,7 @@ export async function createPost(args) {
   const content = `---
 time: ${time}
 slug: ${slug}
+draft: false
 title: ${title}
 tags:
 ${tagsBlock}

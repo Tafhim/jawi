@@ -14,7 +14,8 @@ Visit http://localhost:4321.
 
 ```bash
 npm run dev                          # Start dev server
-npm run build                        # Build static site
+npm run build                        # Build static site (excludes drafts)
+JAWI_INCLUDE_DRAFTS=true npm run build  # Build including draft content
 npm run preview                      # Preview built site
 ```
 

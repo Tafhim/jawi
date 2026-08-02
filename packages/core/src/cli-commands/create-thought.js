@@ -112,6 +112,7 @@ export async function createThought(args) {
   const content = `---
 time: ${time}
 slug: ${slug}
+draft: false
 ${colorLine}tags:
 ${tagsBlock}
 ---
