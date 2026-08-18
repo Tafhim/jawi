@@ -14,6 +14,7 @@
  *   changelog                   Show changelog
  *   migrate <migration>         Run a migration (slugs, time)
  *   upgrade                     Check for upgrades
+ *   admin                       Start the web admin panel
  *   --help                      Show this help
  *   --version                   Show version
  */
@@ -66,6 +67,8 @@ function main() {
       return import('./cli-commands/migrate.js').then(m => m.migrate(commandArgs));
     case 'upgrade':
       return import('./cli-commands/upgrade.js').then(m => m.upgrade(commandArgs));
+    case 'admin':
+      return import('./cli-commands/admin.js').then(m => m.admin(commandArgs));
     default:
       console.error(`Unknown command: ${command}`);
       console.error('Run "jawi --help" for usage information.');

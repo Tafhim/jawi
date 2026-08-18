@@ -1,0 +1,32 @@
+#!/bin/sh
+# Pre-commit hook: block commits that stage files containing common secret
+# patterns (GitHub/AWS/Stripe/Slack/Google keys, JWTs, private-key headers).
+#
+# Enable once per clone:
+#   git config core.hooksPath scripts
+#
+# Emergency override (use with care on a public repo):
+#   git commit --no-verify
+
+PATTERNS='ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|github_pat_[A-Za-z0-9_]{40,}|AKIA[0-9A-Z]{16}|BEGIN [A-Z ]*PRIVATE KEY|eyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{10,}|xox[baprs]-[A-Za-z0-9-]{10,}|sk_live_[A-Za-z0-9]{16,}|AIza[0-9A-Za-z_-]{30,}'
+
+# Only files being added or changed (skip deletions)
+files=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$files" ] && exit 0
+
+found=0
+for f in $files; do
+  if git show ":$f" 2>/dev/null | grep -nEiq "$PATTERNS"; then
+    echo "⚠️  possible secret in staged file: $f"
+    git show ":$f" | grep -nEi "$PATTERNS" | sed 's/^/    /'
+    found=1
+  fi
+done
+
+if [ "$found" -eq 1 ]; then
+  echo ""
+  echo "Commit blocked. Remove the secret, re-stage, and try again."
+  echo "(Emergency override: git commit --no-verify)"
+  exit 1
+fi
+exit 0

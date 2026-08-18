@@ -4,3 +4,6 @@ dist
 .cache
 .env
 test-results
+
+# jawi admin runtime state (token, audit log, backups, trash)
+.jawi-admin/

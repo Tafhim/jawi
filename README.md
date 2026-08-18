@@ -45,6 +45,20 @@ cd my-blog
 npm run dev
 ```
 
+## Features
+
+- **Three content types** — posts, code snippets, and colored thoughts, all plain Markdown on disk.
+- **Serverless & static** — builds to static HTML with Astro; no backend required to serve.
+- **Admin panel** — a local web UI to create, edit, and manage content from the browser:
+
+  ```bash
+  npx jawi admin        # or: npm run admin
+  ```
+
+  Binds to `127.0.0.1` by default and is protected by a token. See the core README for details.
+- **Override cascade** — copy any framework page, component, or layout into your project and customise it.
+- **Migrations & upgrades** — tooling to evolve your content and overrides safely.
+
 ## Documentation
 
 See [packages/core/README.md](packages/core/README.md) for full documentation.

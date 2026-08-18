@@ -337,6 +337,79 @@ npx jawi upgrade --refresh-manifest        # Refresh override manifest
 npx jawi changelog                         # Show changelog
 ```
 
+## Admin Panel
+
+A local web admin panel for managing your content from the browser — no build step, no new dependencies. It reads and writes the same Markdown files on disk that the CLI and the build use, so everything stays in sync.
+
+```bash
+npx jawi admin
+```
+
+This starts a server on `http://127.0.0.1:4322` (the Astro dev server uses `4321`, so they can run side by side) and prints a token. Open the URL, enter the token, and you're in.
+
+### What you can do
+
+- **Dashboard** — counts for posts/thoughts/codes/drafts, top tags, and recent items.
+- **Content** — browse, search, and filter all items (including drafts, which the build hides). Create, edit, duplicate, publish/unpublish, and delete posts, thoughts, and code snippets.
+- **Editor** — a split markdown/code editor with a live preview rendered by the framework's own `parseMarkdown` (so emoji, code highlighting, and MDX embeds look exactly as they will on the site). Type-specific fields: image picker for posts, a color picker for thoughts, and a language selector + MDX toggle for code.
+- **Tags** — rename or remove a tag across every content file at once.
+- **Images** — upload (drag & drop), browse, copy URLs, and delete images in `public/images/`.
+- **Settings** — edit `jawi.config.mjs` (site title/footer/URL, watermark, pagination, timezone, date format) with validation and a live date-format preview.
+- **Trash** — deleted items are soft-deleted here; restore or permanently purge them.
+- **Audit log** — a JSONL record of every change made through the panel.
+
+### Options
+
+```bash
+npx jawi admin                          # default: 127.0.0.1:4322
+npx jawi admin --port 5000              # custom port
+npx jawi admin --host 0.0.0.0           # bind to all interfaces (see Security)
+npx jawi admin --token my-secret        # use a specific token
+npx jawi admin --open                   # open the browser automatically
+JAWI_ADMIN_TOKEN=my-secret npx jawi admin   # token from the environment
+```
+
+### Tokens & security
+
+The panel is **local-first** and binds to `127.0.0.1` by default, so it is not reachable from the network. On top of that, every request is protected by a token:
+
+1. `JAWI_ADMIN_TOKEN` environment variable (highest priority)
+2. `--token` CLI flag
+3. A generated token stored in `.jawi-admin/token` (created on first run, `chmod 600`)
+
+Logging in sets an `HttpOnly`, `SameSite=Strict` session cookie (12-hour lifetime, held in memory). Mutating requests are also checked for a matching `Origin` header (CSRF protection). There is a 15 MB JSON body limit, and all file paths are validated against traversal.
+
+> **If you bind to a non-local interface** (`--host 0.0.0.0`), the panel is exposed to the network. Only do this behind a trusted network or reverse proxy, and set `JAWI_ADMIN_TOKEN` to a strong value. The CLI prints a warning when you do this without an explicit token.
+
+### Where things are stored
+
+All admin state lives in `.jawi-admin/` in your project root (add it to `.gitignore`):
+
+```
+.jawi-admin/
+  token                 # generated admin token (chmod 600)
+  audit.log             # JSONL audit trail
+  backups/<slug>.md.<ts>  # pre-edit backups (last 20 per item)
+  trash/                # soft-deleted items
+  trash-manifest.json   # trash metadata
+```
+
+Content files themselves are written atomically (temp file + rename) with a per-file write queue, and a backup of the previous version is kept before every edit.
+
+### Programmatic use
+
+The server can also be started from code:
+
+```js
+import { startAdminServer } from '@jawi/core/admin';
+
+const { server, url, token } = await startAdminServer({
+  port: 4322,
+  host: '127.0.0.1',
+  // token: 'my-secret',  // optional
+});
+```
+
 ## Override Cascade
 
 Copy any framework page, component, or layout to your project and modify it. The `jawi copy` command handles everything automatically:

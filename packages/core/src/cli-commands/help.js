@@ -46,6 +46,14 @@ COMMANDS
 
   upgrade --check             Check for available upgrades
 
+  admin                       Start the web admin panel for your site
+                              Manage posts, thoughts, codes, tags, images,
+                              and site settings from the browser.
+                              Options: --port <n> (default 4322),
+                              --host <host> (default 127.0.0.1),
+                              --token <token>, --open
+                              Example: jawi admin --port 5000
+
 FLAGS
   --help, -h                  Show this help message
   --version, -v               Show version

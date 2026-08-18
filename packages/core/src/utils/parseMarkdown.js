@@ -11,6 +11,9 @@
  * @param {Object} [config] - Optional configuration object
  * @param {string} [config.cacheDir] - Custom cache directory (default: process.cwd()/.cache)
  * @param {string} [config.baseDir] - Base content directory for resolving CodeContent slugs
+ * @param {boolean} [config.skipLinkFetch] - When true, <Link> components render
+ *   as static URL cards without fetching Open Graph metadata (used by the
+ *   admin panel preview to stay offline and fast)
  * @returns {Promise<Object>} Parsed object with frontmatter metadata and HTML content body
  */
 
@@ -237,11 +240,15 @@ ${innerContent}
 }
 
 /**
+ * Matches <Link url="..." text="..." /> component syntax in HTML.
+ */
+const linkRegex = /<Link\s+url="([^"]+)"(?:\s+text="([^"]*)")?\s*\/>/gi;
+
+/**
  * Process <Link url="" text="" /> components in parsed content HTML.
  * Replaces each <Link> with a link preview card using OG metadata.
  */
 async function processLinkComponents(html, filename, config) {
-  const linkRegex = /<Link\s+url="([^"]+)"(?:\s+text="([^"]*)")?\s*\/>/gi;
   const matches = [...html.matchAll(linkRegex)];
 
   if (matches.length === 0) return html;
@@ -371,7 +378,12 @@ async function parseMarkdown(content, filename, codes = [], config = null) {
   });
 
   // Process <Link> components for .mdx files (async)
-  html = await processLinkComponents(html, filename, config);
+  if (config && config.skipLinkFetch) {
+    // Offline mode: render static URL cards without fetching OG metadata
+    html = html.replace(linkRegex, (match, url, text) => renderLinkCardHtml(url, null, text));
+  } else {
+    html = await processLinkComponents(html, filename, config);
+  }
 
   // Unwrap <p> tags around standalone <details> (link embeds)
   // Must happen AFTER processLinkComponents since that's when link-embed HTML is generated

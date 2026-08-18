@@ -17,7 +17,20 @@ npm run dev                          # Start dev server
 npm run build                        # Build static site (excludes drafts)
 JAWI_INCLUDE_DRAFTS=true npm run build  # Build including draft content
 npm run preview                      # Preview built site
+npm run admin                        # Start the web admin panel
 ```
+
+## Admin Panel
+
+Manage your content from the browser:
+
+```bash
+npm run admin        # or: npx jawi admin
+```
+
+This starts a local server at `http://127.0.0.1:4322` and prints a token. Open the URL, enter the token, and you can create and edit posts, thoughts, and code snippets, manage tags and images, edit your config, and browse the trash and audit log.
+
+The panel binds to `127.0.0.1` by default and is token-protected. All admin state (token, audit log, backups, trash) lives in `.jawi-admin/`, which is git-ignored.
 
 ## Creating Content
 

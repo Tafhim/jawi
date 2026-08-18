@@ -12,7 +12,8 @@
     "./layouts/*": "./src/layouts/*.astro",
     "./pages/*": "./src/pages/*.astro",
     "./config": "./src/config.js",
-    "./version": "./src/version.js"
+    "./version": "./src/version.js",
+    "./admin": "./src/admin/index.js"
   },
   "bin": {
     "jawi": "./src/cli.js"
